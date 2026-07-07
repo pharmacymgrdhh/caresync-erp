@@ -657,7 +657,65 @@
                         </div>
                     </div>
                 </section>
-                <section id="pharmacyView-inventory" class="pharmacy-view"><div class="module-shell"><h2>Inventory</h2></div></section>
+                <section id="pharmacyView-inventory" class="pharmacy-view">
+                    <div class="module-shell" style="max-width: 1200px; margin: 0 auto;">
+                        <div class="module-header" style="border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+                            <h2>📦 Physical Stock Audit (Reconciliation)</h2>
+                        </div>
+                        
+                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffe0b2; margin-top: 20px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="flex: 1; position: relative;">
+                                <label style="font-weight: bold; color: #e67e22; font-size: 13px; display: block; margin-bottom: 5px;">Scan or Search Medicine to Audit (Loads all batches of that medicine):</label>
+                                <input type="text" id="auditMedSearch" placeholder="🔍 Search medicine by name or code..." autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-size: 15px; font-weight: bold; color: #2c598f;">
+                                <div id="auditMedDropdown" class="autocomplete-items" style="z-index: 200;"></div>
+                            </div>
+                        </div>
+                        <!-- 🔴 NEW: AUTO LOAD AUDIT BUTTONS -->
+                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; align-items: center;">
+                            <span style="font-size: 13px; font-weight: bold; color: #475569; display: flex; align-items: center; margin-right: 10px;">⚡ Auto Load:</span>
+                            <button class="small-action primary" style="background: #f39c12; border-color: #f39c12;" onclick="loadBulkAudit('FAST_50')">Top 50 Fast Moving</button>
+                            <button class="small-action primary" style="background: #27ae60; border-color: #27ae60;" onclick="loadBulkAudit('HIGH_20')">Top 20 High Value</button>
+                            <button class="small-action primary" style="background: #8e44ad; border-color: #8e44ad;" onclick="loadBulkAudit('RANDOM_50')">Random 50 Products</button>
+                            <button class="small-action primary" style="background: #34495e; border-color: #34495e;" onclick="loadBulkAudit('ALL_RACK')">Load All (Rack-wise)</button>
+                            <button class="small-action" style="border: 1px solid #e74c3c; color: #e74c3c; margin-left: auto;" onclick="clearAuditTable()">Clear List</button>
+                        </div>
+
+                        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                            <div class="table-scroll-container" style="max-height: 400px; border: none; border-radius: 0;">
+                                <table class="erp-pro-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                    <thead style="background:#f8fafc; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                        <tr>
+                                            <th style="padding: 12px; text-align: left; color: #475569; width: 10%;">Code</th>
+                                            <th style="padding: 12px; text-align: left; color: #475569; width: 25%;">Medicine Name</th>
+                                            <th style="padding: 12px; text-align: center; color: #475569; width: 15%;">Batch & Exp</th>
+                                            <th style="padding: 12px; text-align: center; color: #475569; width: 8%;">MRP (₹)</th>
+                                            <th style="padding: 12px; text-align: center; background:#e8f5e9; color:#1b5e20; width: 10%;">System Stock</th>
+                                            <th style="padding: 12px; text-align: center; background:#fff5f5; color:#c62828; width: 12%;">Physical Stock</th>
+                                            <th style="padding: 12px; text-align: center; color: #475569; width: 8%;">Variance</th>
+                                            <th style="padding: 12px; text-align: right; color: #475569; width: 10%;">Value Diff (₹)</th>
+                                            <th style="padding: 12px; text-align: center; color: #475569; width: 2%;">X</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="auditTableBody">
+                                        <tr><td colspan="9" style="text-align:center; padding: 40px; color: #94a3b8; font-size: 15px;">Search and select a medicine from above to start auditing.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: flex-end; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <div style="width: 50%;">
+                                <label style="font-size:13px; font-weight:bold; color:#64748b; margin-bottom:5px; display:block;">Audit Remarks / Reason for Variance <span style="color:red">*</span></label>
+                                <input type="text" id="auditRemarks" placeholder="E.g. Expired items removed / Found extra stock in rack / Routine Audit" style="padding:12px; border:1px solid #ced4da; outline:none; border-radius:4px; width:100%; font-size:14px; color: #334155;">
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 13px; color: #64748b; font-weight: bold; margin-bottom: 5px;">NET VARIANCE VALUE</div>
+                                <div style="font-size: 26px; font-weight: 900;" id="auditNetValueDisplay">₹ 0.00</div>
+                                <button class="btn-dispatch" style="background-color: #4f46e5; padding: 12px 30px; font-size: 15px; margin-top: 15px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);" onclick="submitStockAudit()">Submit Audit & Adjust Stock ➔</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
                 <section id="pharmacyView-indents" class="pharmacy-view">
                     
                     <!-- 🔴 Sub-Tabs CSS -->
@@ -980,8 +1038,134 @@
                         </div>
                     </div>
                 </section>
-                <section id="pharmacyView-accounts" class="pharmacy-view"><div class="module-shell"><h2>Accounts</h2></div></section>
-                <section id="pharmacyView-reports" class="pharmacy-view"><div class="module-shell"><h2>Reports</h2></div></section>
+                <!-- 🔴 ACCOUNTS DASHBOARD -->
+                <section id="pharmacyView-accounts" class="pharmacy-view">
+                    <div class="module-shell">
+                        <div class="module-header">
+                            <h2>📊 Accounts & Finance</h2>
+                        </div>
+                        
+                        <!-- Accounts Module Grid -->
+                        <div class="module-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); margin-top: 20px;">
+                            <!-- Shift Handover Button -->
+                            <div class="module-card" onclick="openShiftHandoverOverlay()">
+                                <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);">
+                                    <span class="material-symbols-outlined" style="color:#166534; font-size: 32px;">point_of_sale</span>
+                                </div>
+                                <div class="module-title">Day Book & Shift Handover</div>
+                                <p style="font-size:12px; color:#64748b; margin-top:8px;">Close shift & reconcile cash with denominations.</p>
+                            </div>
+                            
+                            <!-- Future Modules (Placeholders) -->
+                            <div class="module-card" style="opacity: 0.6; cursor: not-allowed;">
+                                <div class="module-icon-wrapper"><span class="material-symbols-outlined" style="color:#64748b;">account_balance_wallet</span></div>
+                                <div class="module-title">Daily Expenses (Soon)</div>
+                            </div>
+                            <div class="module-card" style="opacity: 0.6; cursor: not-allowed;">
+                                <div class="module-icon-wrapper"><span class="material-symbols-outlined" style="color:#64748b;">request_quote</span></div>
+                                <div class="module-title">Vendor Ledger (Soon)</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+    <!-- 🔴 NEW HIGH-END SHIFT HANDOVER OVERLAY -->
+    <div id="shiftHandoverOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #f4f7f9; z-index: 25000; flex-direction: column;">
+        <div class="p-header" style="position: relative; z-index: 2; display: flex; justify-content: space-between; align-items: center; background: #1e293b;">
+            <div style="display: flex; align-items: center;">
+                <h2 style="margin: 0; font-size: 20px; color: white; display: flex; align-items: center; gap: 10px;">
+                    <span class="material-symbols-outlined">calculate</span> Shift Handover & Cash Reconciliation
+                </h2>
+            </div>
+            <button onclick="closeShiftHandoverOverlay()" style="background: #ef4444; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 14px; transition: 0.2s;">
+                Close ✖
+            </button>
+        </div>
+
+        <div style="flex: 1; padding: 30px; overflow-y: auto;">
+            <div id="shiftSummaryLoader" style="text-align:center; padding: 60px; color:#7f8c8d;">
+                <span class="material-symbols-outlined" style="font-size: 40px; animation: pulse 1.5s infinite;">sync</span>
+                <h3>Calculating your shift data...</h3>
+            </div>
+
+            <div id="shiftSummaryContent" style="display: none; max-width: 1000px; margin: 0 auto;">
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
+                    
+                    <!-- LEFT PANEL: SYSTEM CASH CALCULATION -->
+                    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;">
+                        <h3 style="margin: 0; background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 16px;">System Calculated Cash</h3>
+                        <div style="padding: 20px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+                                <tr><td style="padding: 12px 0; color: #475569; font-weight: 500;">Cash Sale (+)</td><td style="text-align: right; font-weight: bold; color: #15803d;">₹ <span id="acc_cashSales">0.00</span></td></tr>
+                                <tr><td style="padding: 12px 0; border-bottom: 1px dashed #cbd5e1; color: #475569; font-weight: 500;">Cash Return (-)</td><td style="text-align: right; border-bottom: 1px dashed #cbd5e1; font-weight: bold; color: #b91c1c;">₹ <span id="acc_cashReturns">0.00</span></td></tr>
+                                <tr><td style="padding: 15px 0; font-size: 18px; font-weight: bold; color: #1e293b;">Expected Cash</td><td style="text-align: right; font-size: 22px; font-weight: 900; color: #1d4ed8;">₹ <span id="acc_expectedCash">0.00</span></td></tr>
+                            </table>
+                        </div>
+                        
+                        <div style="background: #f8fafc; padding: 20px; border-top: 1px solid #e2e8f0;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <tr><td style="padding: 8px 0; color: #64748b; font-weight: 500;">UPI / Card Sale</td><td style="text-align: right; font-weight: bold; color: #475569;">₹ <span id="acc_onlineSales">0.00</span></td></tr>
+                                <tr><td style="padding: 8px 0; color: #64748b; font-weight: 500;">System UPI Total</td><td style="text-align: right; font-weight: bold; background: #fef08a; color: #854d0e; padding: 2px 8px; border-radius: 4px;">₹ <span id="acc_onlineSalesTotal">0.00</span></td></tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT PANEL: DENOMINATION & RECONCILIATION -->
+                    <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px rgba(0,0,0,0.05); overflow: hidden;">
+                        <h3 style="margin: 0; background: #e0f2fe; padding: 15px 20px; border-bottom: 1px solid #bae6fd; color: #1e3a8a; font-size: 16px;">Physical Denomination</h3>
+                        <div style="padding: 20px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                                <thead>
+                                    <tr style="border-bottom: 2px solid #cbd5e1; color: #64748b;">
+                                        <th style="text-align: left; padding-bottom: 8px;">Note / Coin</th>
+                                        <th style="text-align: center; padding-bottom: 8px;">Count</th>
+                                        <th style="text-align: right; padding-bottom: 8px;">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td style="padding: 6px 0; font-weight: bold;">₹ 500</td><td style="text-align: center;"><input type="number" id="den_500" class="denom-input" min="0" oninput="calcDenom()" style="width:60px; padding:4px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; outline:none;"></td><td style="text-align: right; font-weight: 500; color:#475569;" id="den_500_tot">0</td></tr>
+                                    <tr><td style="padding: 6px 0; font-weight: bold;">₹ 200</td><td style="text-align: center;"><input type="number" id="den_200" class="denom-input" min="0" oninput="calcDenom()" style="width:60px; padding:4px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; outline:none;"></td><td style="text-align: right; font-weight: 500; color:#475569;" id="den_200_tot">0</td></tr>
+                                    <tr><td style="padding: 6px 0; font-weight: bold;">₹ 100</td><td style="text-align: center;"><input type="number" id="den_100" class="denom-input" min="0" oninput="calcDenom()" style="width:60px; padding:4px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; outline:none;"></td><td style="text-align: right; font-weight: 500; color:#475569;" id="den_100_tot">0</td></tr>
+                                    <tr><td style="padding: 6px 0; font-weight: bold;">₹ 50</td><td style="text-align: center;"><input type="number" id="den_50" class="denom-input" min="0" oninput="calcDenom()" style="width:60px; padding:4px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; outline:none;"></td><td style="text-align: right; font-weight: 500; color:#475569;" id="den_50_tot">0</td></tr>
+                                    <tr><td style="padding: 6px 0; font-weight: bold;">₹ 20</td><td style="text-align: center;"><input type="number" id="den_20" class="denom-input" min="0" oninput="calcDenom()" style="width:60px; padding:4px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; outline:none;"></td><td style="text-align: right; font-weight: 500; color:#475569;" id="den_20_tot">0</td></tr>
+                                    <tr><td style="padding: 6px 0; font-weight: bold;">₹ 10</td><td style="text-align: center;"><input type="number" id="den_10" class="denom-input" min="0" oninput="calcDenom()" style="width:60px; padding:4px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; outline:none;"></td><td style="text-align: right; font-weight: 500; color:#475569;" id="den_10_tot">0</td></tr>
+                                    <tr><td style="padding: 6px 0; font-weight: bold;">Coins ₹</td><td style="text-align: center;"><input type="number" id="den_coins" class="denom-input" min="0" oninput="calcDenom()" style="width:60px; padding:4px; text-align:center; border:1px solid #cbd5e1; border-radius:4px; outline:none;"></td><td style="text-align: right; font-weight: 500; color:#475569;" id="den_coins_tot">0</td></tr>
+                                    <tr style="border-top: 2px solid #cbd5e1; background: #f0fdf4;"><td colspan="2" style="padding: 12px 10px; font-weight: bold; font-size: 16px; color: #166534;">Total Physical Cash</td><td style="text-align: right; padding: 12px 10px; font-weight: 900; font-size: 20px; color: #15803d;">₹ <span id="acc_physicalCashSpan">0.00</span></td></tr>
+                                </tbody>
+                            </table>
+                            
+                            <!-- 🔴 This hidden input holds the value for backend saving -->
+                            <input type="hidden" id="acc_physicalCash" value="0">
+
+                            <div style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden;">
+                                <div style="background: #f8fafc; padding: 12px; font-weight: bold; color: #64748b; border-right: 1px solid #e2e8f0;">Cash Difference</div>
+                                <div id="acc_diffAmt" style="padding: 12px; text-align: right; font-weight: 900; font-size: 16px; background: white;">0.00</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM PANEL: HANDOVER ACTION -->
+                <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); padding: 25px; margin-top: 25px;">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr auto; gap: 20px; align-items: end;">
+                        <div>
+                            <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Handover To (Next User) <span style="color:red">*</span></label>
+                            <select id="acc_handoverTo" style="width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; outline: none; font-weight: bold; color: #2c598f;">
+                                <option value="">-- Select Staff --</option>
+                                <option value="Admin / Accounts">Admin / Accounts Dept</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 13px; font-weight: bold; color: #475569; margin-bottom: 5px; display: block;">Remarks / Expense Details</label>
+                            <input type="text" id="acc_remarks" placeholder="Any cash given for expenses? Explain differences here." style="width: 100%; padding: 10px; font-size: 14px; border: 1px solid #ced4da; border-radius: 4px; outline: none;">
+                        </div>
+                        <div>
+                            <button id="btnSubmitHandover" class="btn-dispatch" style="background-color: #27ae60; padding: 12px 30px; font-size: 16px; margin: 0;" onclick="submitShiftHandover()">Submit & End Shift ➔</button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -3696,7 +3880,8 @@
             
             // 🔴 नवीन: युझर्सचा डेटा टेबलमध्ये भरणे
             if(data.settings.users && typeof renderAdminUsers === "function") renderAdminUsers(data.settings.users); 
-            
+           if(data.settings.users) { window.allUsersList = data.settings.users; renderAdminUsers(data.settings.users); }
+
             updateAdminAnalytics(); executeAdminSearch(); showToast("Admin Data Loaded", "success");
         }).catch(err => { showToast("Error loading data", "error"); });
     }
@@ -5639,7 +5824,451 @@
         document.body.classList.add('print-bill-active'); 
         window.print();
     }
+    // ==========================================
+    // 🔴 SHIFT HANDOVER / DAY BOOK LOGIC (PROFESSIONAL)
+    // ==========================================
+    let shiftExpectedCash = 0;
 
+    function openShiftHandoverOverlay() {
+        document.getElementById('shiftHandoverOverlay').style.display = 'flex';
+        
+        // Reset Inputs
+        document.querySelectorAll('.denom-input').forEach(el => el.value = '');
+        document.querySelectorAll('[id^="den_"][id$="_tot"]').forEach(el => el.innerText = '0');
+        document.getElementById('acc_physicalCashSpan').innerText = '0.00';
+        document.getElementById('acc_physicalCash').value = 0;
+        document.getElementById('acc_diffAmt').innerHTML = '0.00';
+        document.getElementById('acc_diffAmt').style.color = '#334155';
+        
+        loadShiftSummary();
+    }
+
+    function closeShiftHandoverOverlay() {
+        document.getElementById('shiftHandoverOverlay').style.display = 'none';
+    }
+
+    // 🔴 Calculate Denomination & Readonly Physical Cash
+    function calcDenom() {
+        let n500 = parseInt(document.getElementById('den_500').value) || 0;
+        let n200 = parseInt(document.getElementById('den_200').value) || 0;
+        let n100 = parseInt(document.getElementById('den_100').value) || 0;
+        let n50  = parseInt(document.getElementById('den_50').value) || 0;
+        let n20  = parseInt(document.getElementById('den_20').value) || 0;
+        let n10  = parseInt(document.getElementById('den_10').value) || 0;
+        let coins = parseFloat(document.getElementById('den_coins').value) || 0;
+        
+        // Update Row Totals
+        document.getElementById('den_500_tot').innerText = n500 * 500;
+        document.getElementById('den_200_tot').innerText = n200 * 200;
+        document.getElementById('den_100_tot').innerText = n100 * 100;
+        document.getElementById('den_50_tot').innerText = n50 * 50;
+        document.getElementById('den_20_tot').innerText = n20 * 20;
+        document.getElementById('den_10_tot').innerText = n10 * 10;
+        document.getElementById('den_coins_tot').innerText = coins;
+
+        let total = (n500 * 500) + (n200 * 200) + (n100 * 100) + (n50 * 50) + (n20 * 20) + (n10 * 10) + coins;
+        
+        // Update Grand Total (Readonly Span + Hidden Input)
+        document.getElementById('acc_physicalCashSpan').innerText = total.toFixed(2);
+        document.getElementById('acc_physicalCash').value = total;
+        
+        calculateCashDifference();
+    }
+
+    function calculateCashDifference() {
+        let physical = parseFloat(document.getElementById('acc_physicalCash').value) || 0;
+        let diff = physical - shiftExpectedCash;
+        let diffAmt = document.getElementById('acc_diffAmt');
+        
+        if (diff === 0) {
+            diffAmt.innerText = "Match (0.00)";
+            diffAmt.style.color = '#166534';
+            diffAmt.style.backgroundColor = '#dcfce7';
+        } else if (diff < 0) {
+            diffAmt.innerText = diff.toFixed(2);
+            diffAmt.style.color = '#991b1b';
+            diffAmt.style.backgroundColor = '#fee2e2';
+        } else {
+            diffAmt.innerText = "+" + diff.toFixed(2);
+            diffAmt.style.color = '#854d0e';
+            diffAmt.style.backgroundColor = '#fef9c3';
+        }
+    }
+
+    function loadShiftSummary() {
+        document.getElementById('shiftSummaryContent').style.display = 'none';
+        document.getElementById('shiftSummaryLoader').style.display = 'block';
+
+        let staffDropdown = document.getElementById('acc_handoverTo');
+        if(window.allUsersList && staffDropdown.options.length <= 2) {
+            window.allUsersList.forEach(u => {
+                if(u.name !== loggedInName && String(u.unit).includes(loggedInUnit.replace("-PHARMACY", "").trim())) {
+                    staffDropdown.innerHTML += `<option value="${u.name}">${u.name} (${u.role})</option>`;
+                }
+            });
+        }
+
+        fetch(SCRIPT_URL + "?action=getShiftSummary&unitName=" + encodeURIComponent(loggedInUnit) + "&operatorName=" + encodeURIComponent(loggedInName) + "&t=" + new Date().getTime())
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('shiftSummaryLoader').style.display = 'none';
+            document.getElementById('shiftSummaryContent').style.display = 'block';
+            
+            if(data.success) {
+                document.getElementById('acc_cashSales').innerText = parseFloat(data.cashSales).toFixed(2);
+                document.getElementById('acc_cashReturns').innerText = parseFloat(data.cashReturns).toFixed(2);
+                
+                document.getElementById('acc_onlineSales').innerText = parseFloat(data.onlineSales).toFixed(2);
+                document.getElementById('acc_onlineSalesTotal').innerText = parseFloat(data.onlineSales).toFixed(2);
+                
+                shiftExpectedCash = parseFloat(data.expectedCash);
+                document.getElementById('acc_expectedCash').innerText = shiftExpectedCash.toFixed(2);
+                
+                document.getElementById('acc_remarks').value = '';
+                calculateCashDifference();
+            } else {
+                alert("Error fetching shift data.");
+            }
+        })
+        .catch(err => {
+            document.getElementById('shiftSummaryLoader').style.display = 'none';
+            alert("Connection error fetching shift data.");
+        });
+    }
+
+    async function submitShiftHandover() {
+        let physical = parseFloat(document.getElementById('acc_physicalCash').value) || 0;
+        let handoverTo = document.getElementById('acc_handoverTo').value;
+        let remarks = document.getElementById('acc_remarks').value.trim();
+
+        if(physical === 0) {
+            if(!confirm("Warning: Physical Cash is 0. Are you sure you want to submit?")) return;
+        }
+
+        if(handoverTo === "") return alert("Please select to whom you are handing over the shift.");
+        
+        let diff = physical - shiftExpectedCash;
+        if(diff !== 0 && remarks === "") {
+            return alert("There is a Cash Shortage/Excess. Please enter a remark explaining the difference.");
+        }
+
+        if(!confirm(`FINAL RECONCILIATION:\n\nExpected Cash: ₹${shiftExpectedCash}\nPhysical Cash: ₹${physical}\nDifference: ₹${diff.toFixed(2)}\n\nAre you sure you want to end your shift?`)) return;
+
+        if(!(await verifyUserPasskey("Shift Handover Validation"))) return;
+
+        let payload = {
+            action: "saveShiftHandover",
+            unitName: loggedInUnit,
+            operatorName: loggedInName,
+            verifiedBy: window.lastVerifiedUser,
+            cashSales: document.getElementById('acc_cashSales').innerText,
+            cashReturns: document.getElementById('acc_cashReturns').innerText,
+            expectedCash: shiftExpectedCash,
+            physicalCash: physical,
+            difference: diff,
+            handoverTo: handoverTo,
+            remarks: remarks
+        };
+
+        let btn = document.getElementById('btnSubmitHandover');
+        let origText = btn.innerText; btn.innerText = "Submitting..."; btn.disabled = true;
+
+        fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if(data.success) {
+                showToast("Shift Handover Completed Successfully!", "success");
+                alert("✅ Shift Handover Saved. Please LOGOUT now.");
+                closeShiftHandoverOverlay();
+            } else {
+                alert("Error: " + data.message);
+            }
+        }).catch(err => {
+            btn.innerText = origText; btn.disabled = false;
+            alert("Error saving shift handover.");
+        });
+    }
+// ==========================================
+    // 🔴 PHYSICAL STOCK AUDIT LOGIC
+    // ==========================================
+    let auditItemsList = [];
+    let auditMedFocus = -1;
+
+    // 1. Smart Search for Audit
+    const auditMedInput = document.getElementById('auditMedSearch');
+    const auditMedDropdown = document.getElementById('auditMedDropdown');
+
+    if (auditMedInput) {
+        auditMedInput.addEventListener('keydown', function(e) {
+            let x = document.getElementById("auditMedDropdown").getElementsByClassName("med-item"); if (!x || x.length === 0) return;
+            if (e.key === "ArrowDown") { auditMedFocus++; _addActiveAudit(x); e.preventDefault(); } 
+            else if (e.key === "ArrowUp") { auditMedFocus--; _addActiveAudit(x); e.preventDefault(); } 
+            else if (e.key === "Enter") { e.preventDefault(); if (auditMedFocus > -1) x[auditMedFocus].click(); }
+        });
+
+        function _addActiveAudit(x) {
+            for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active");
+            if (auditMedFocus >= x.length) auditMedFocus = 0; if (auditMedFocus < 0) auditMedFocus = (x.length - 1);
+            x[auditMedFocus].classList.add("autocomplete-active"); x[auditMedFocus].scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+
+        auditMedInput.addEventListener('input', function() {
+            auditMedFocus = -1; let val = this.value.toUpperCase().replace(/-/g, ' ').trim(); auditMedDropdown.innerHTML = ''; 
+            if (!val) { auditMedDropdown.style.display = 'none'; return; }
+            let tokens = val.split(" "); let count = 0;
+            
+            for (let i = 0; i < globalMedDetails.length; i++) {
+                let m = globalMedDetails[i];
+                let searchSpace = (m.code + " " + m.name).toUpperCase().replace(/-/g, ' '); 
+                if (tokens.every(token => searchSpace.includes(token))) {
+                    let div = document.createElement('div'); div.className = "med-item"; 
+                    div.innerHTML = `<div class="med-brand">${m.name.split("|")[0].trim()} <span style="font-size:11px; color:#4276b6;">[${m.code}]</span></div>`;
+                    
+                    div.addEventListener('click', function() {
+                        auditMedInput.value = ""; // क्लियर करा
+                        auditMedDropdown.style.display = 'none';
+                        loadMedicineBatchesForAudit(m);
+                    });
+                    auditMedDropdown.appendChild(div); count++;
+                }
+                if(count > 25) break;
+            }
+            auditMedDropdown.style.display = count > 0 ? 'block' : 'none';
+        });
+        document.addEventListener('click', function(e) { if (e.target !== auditMedInput) auditMedDropdown.style.display = 'none'; });
+    }
+
+    // 2. Load Batches for Selected Medicine
+    function loadMedicineBatchesForAudit(m) {
+        let baseUnit = loggedInUnit.toUpperCase().replace("-PHARMACY", "").trim();
+        let batchesFound = globalBatches.filter(b => Number(b.code) === Number(m.code));
+        
+        if (batchesFound.length === 0) {
+            alert(`No stock found in system for ${m.name.split("|")[0].trim()}. Cannot audit an empty item!`);
+            return;
+        }
+
+        // Remove placeholder if present
+        let tbody = document.getElementById('auditTableBody');
+        if(tbody.innerHTML.includes('Search and select')) tbody.innerHTML = '';
+
+        batchesFound.forEach(b => {
+            // Check if batch is already added
+            let existingRow = document.querySelector(`#auditTableBody tr[data-code="${m.code}"][data-batch="${b.batchExp}"]`);
+            if(!existingRow) {
+                let tr = document.createElement('tr');
+                tr.setAttribute('data-code', m.code);
+                tr.setAttribute('data-batch', b.batchExp);
+                tr.innerHTML = `
+                    <td style="font-weight: bold; color: #64748b;">${m.code}</td>
+                    <td style="font-weight: bold; color: #2c598f;">${m.name.split("|")[0].trim()}</td>
+                    <td style="text-align: center; font-weight: 500;">${b.batchExp}</td>
+                    <td style="text-align: center;" class="aud-mrp">${b.mrp.toFixed(2)}</td>
+                    <td style="text-align: center; font-size: 16px; font-weight: 900; color: #15803d; background: #e8f5e9;" class="aud-sys-qty">${b.stock}</td>
+                    <td style="text-align: center; background: #fff5f5;">
+                        <input type="number" class="aud-phys-qty" value="${b.stock}" min="0" oninput="calcAuditVariance(this)" onfocus="this.select()" style="width: 80%; padding: 6px; text-align: center; border: 2px solid #e74c3c; border-radius: 4px; outline: none; font-size: 16px; font-weight: bold; color: #c62828;">
+                    </td>
+                    <td style="text-align: center; font-weight: bold; font-size: 15px;" class="aud-variance">0</td>
+                    <td style="text-align: right; font-weight: bold;" class="aud-val-diff">0.00</td>
+                    <td style="text-align: center;"><button class="action-icon danger" onclick="this.parentElement.parentElement.remove(); calculateAuditNetValue();"><span class="material-symbols-outlined">delete</span></button></td>
+                `;
+                tbody.prepend(tr); // नवीन आयटम वर दिसेल
+            }
+        });
+        calculateAuditNetValue();
+    }
+
+    // 3. Calculate Variance dynamically
+    function calcAuditVariance(inputEl) {
+        let tr = inputEl.closest('tr');
+        let sysQty = parseFloat(tr.querySelector('.aud-sys-qty').innerText) || 0;
+        let physQty = parseFloat(inputEl.value);
+        if(isNaN(physQty) || physQty < 0) physQty = 0;
+
+        let variance = physQty - sysQty;
+        let mrp = parseFloat(tr.querySelector('.aud-mrp').innerText) || 0;
+        
+        // Approximate Purchase Rate for Variance value (Assuming 30% margin if exact not available in frontend, 
+        // but MRP * 0.70 is standard for rough estimation in pharmacy audit dashboards).
+        let estPurRate = mrp * 0.70; 
+        let valDiff = variance * estPurRate;
+
+        let varEl = tr.querySelector('.aud-variance');
+        let valEl = tr.querySelector('.aud-val-diff');
+
+        varEl.innerText = variance > 0 ? "+" + variance : variance;
+        varEl.style.color = variance > 0 ? '#15803d' : (variance < 0 ? '#c62828' : '#475569');
+
+        valEl.innerText = valDiff.toFixed(2);
+        valEl.style.color = variance > 0 ? '#15803d' : (variance < 0 ? '#c62828' : '#475569');
+
+        calculateAuditNetValue();
+    }
+
+    function calculateAuditNetValue() {
+        let rows = document.querySelectorAll('#auditTableBody tr[data-code]');
+        let netValue = 0;
+        rows.forEach(tr => {
+            let valDiff = parseFloat(tr.querySelector('.aud-val-diff').innerText) || 0;
+            netValue += valDiff;
+        });
+
+        let displayEl = document.getElementById('auditNetValueDisplay');
+        displayEl.innerText = (netValue > 0 ? "+ ₹ " : (netValue < 0 ? "- ₹ " : "₹ ")) + Math.abs(netValue).toFixed(2);
+        displayEl.style.color = netValue > 0 ? '#15803d' : (netValue < 0 ? '#c62828' : '#334155');
+    }
+
+    // 4. Submit Audit Form
+    async function submitStockAudit() {
+        let rows = document.querySelectorAll('#auditTableBody tr[data-code]');
+        if(rows.length === 0) return alert("Please select and audit at least one medicine.");
+
+        let remarks = document.getElementById('auditRemarks').value.trim();
+        let itemsToAudit = [];
+        let hasVariance = false;
+
+        rows.forEach(tr => {
+            let variance = parseFloat(tr.querySelector('.aud-variance').innerText) || 0;
+            if (variance !== 0) hasVariance = true;
+            
+            itemsToAudit.push({
+                code: tr.getAttribute('data-code'),
+                name: tr.cells[1].innerText,
+                batch: tr.getAttribute('data-batch'),
+                sysStock: parseFloat(tr.querySelector('.aud-sys-qty').innerText) || 0,
+                physStock: parseFloat(tr.querySelector('.aud-phys-qty').value) || 0,
+                variance: variance,
+                valueDiff: parseFloat(tr.querySelector('.aud-val-diff').innerText) || 0
+            });
+        });
+
+        if (hasVariance && remarks === "") {
+            alert("MANDATORY: You have a stock variance. Please enter 'Audit Remarks / Reason' before submitting.");
+            document.getElementById('auditRemarks').focus();
+            return;
+        }
+
+        // 🔴 Passkey Authorization (Secure)
+        if(!(await verifyUserPasskey("Physical Stock Audit & Adjustment"))) return;
+
+        let btn = document.querySelector('#pharmacyView-inventory .btn-dispatch');
+        let origText = btn.innerText; btn.innerText = "Submitting Audit... ⏳"; btn.disabled = true;
+
+        let payload = {
+            action: "saveStockAudit",
+            unitName: loggedInUnit,
+            auditedBy: loggedInName,
+            approvedBy: window.lastVerifiedUser,
+            remarks: remarks,
+            items: itemsToAudit
+        };
+
+        fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if (data.success) {
+                showToast("Stock Audit Completed & Adjusted Successfully!", "success");
+                alert(`✅ Audit Successful!\nAudit No: ${data.auditNo}\nLive Stock has been updated in the system.`);
+                
+                // Reset form
+                document.getElementById('auditTableBody').innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 40px; color: #94a3b8; font-size: 15px;">Search and select a medicine from above to start auditing.</td></tr>';
+                document.getElementById('auditRemarks').value = "";
+                document.getElementById('auditNetValueDisplay').innerText = "₹ 0.00";
+                
+                // Refresh backend data
+                refreshPharmacyData(); 
+            } else { alert("Error: " + data.message); }
+        }).catch(err => {
+            btn.innerText = origText; btn.disabled = false;
+            alert("Connection error while saving audit.");
+        });
+    }
+    // 🔴 5. Clear Audit Table
+    function clearAuditTable() {
+        document.getElementById('auditTableBody').innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 40px; color: #94a3b8; font-size: 15px;">Search and select a medicine from above or use Auto Load to start auditing.</td></tr>';
+        calculateAuditNetValue();
+    }
+
+    // 🔴 6. Bulk Auto-Load Logic (Fast Moving, High Value, Random, All)
+    function loadBulkAudit(type) {
+        let baseUnit = loggedInUnit.toUpperCase().replace("-PHARMACY", "").trim();
+        
+        // 1. Combine batches with MedDetails to get names and calculate values
+        let allStock = globalBatches.map(b => {
+            let med = globalMedDetails.find(m => Number(m.code) === Number(b.code));
+            return {
+                code: b.code,
+                name: med ? med.name.split("|")[0].trim() : 'Unknown',
+                batchExp: b.batchExp,
+                stock: parseFloat(b.stock) || 0,
+                mrp: parseFloat(b.mrp) || 0,
+                value: (parseFloat(b.stock) || 0) * (parseFloat(b.mrp) || 0)
+            };
+        }).filter(item => item.stock > 0); // फक्त ज्याचा स्टॉक सिस्टीममध्ये आहे तेच घ्या
+
+        if (allStock.length === 0) return alert("No active stock found in system for this unit.");
+
+        let selectedItems = [];
+
+        if (type === 'HIGH_20') {
+            // High Value: MRP * Stock ने Sorting करा आणि टॉप २० घ्या
+            allStock.sort((a, b) => b.value - a.value);
+            selectedItems = allStock.slice(0, 20);
+            showToast("Loaded Top 20 High Value Products", "success");
+        } 
+        else if (type === 'FAST_50') {
+            // Fast Moving: Local Storage मधील History (Search Count) वरून ठरवा
+            let pHist = JSON.parse(localStorage.getItem('careSync_pharmaHistory')) || {};
+            allStock.sort((a, b) => (pHist[b.code] || 0) - (pHist[a.code] || 0));
+            selectedItems = allStock.slice(0, 50);
+            showToast("Loaded Top 50 Fast Moving Products", "success");
+        } 
+        else if (type === 'RANDOM_50') {
+            // Random 50: लिस्ट शफल (Shuffle) करा
+            let shuffled = allStock.sort(() => 0.5 - Math.random());
+            selectedItems = shuffled.slice(0, 50);
+            showToast("Loaded Random 50 Products", "success");
+        }
+        else if (type === 'ALL_RACK') {
+            // All (Rack-wise): A to Z अल्फाबेटिकल Sorting करा म्हणजे रॅकप्रमाणे सापडतील
+            allStock.sort((a, b) => a.name.localeCompare(b.name));
+            selectedItems = allStock;
+            showToast(`Loaded All ${allStock.length} Products`, "success");
+        }
+
+        // 2. Clear existing placeholder
+        let tbody = document.getElementById('auditTableBody');
+        if(tbody.innerHTML.includes('Search and select') || tbody.innerHTML.includes('Auto Load')) {
+            tbody.innerHTML = '';
+        }
+
+        // 3. Populate Table
+        selectedItems.forEach(b => {
+            let existingRow = document.querySelector(`#auditTableBody tr[data-code="${b.code}"][data-batch="${b.batchExp}"]`);
+            if(!existingRow) {
+                let tr = document.createElement('tr');
+                tr.setAttribute('data-code', b.code);
+                tr.setAttribute('data-batch', b.batchExp);
+                tr.innerHTML = `
+                    <td style="font-weight: bold; color: #64748b;">${b.code}</td>
+                    <td style="font-weight: bold; color: #2c598f;">${b.name}</td>
+                    <td style="text-align: center; font-weight: 500;">${b.batchExp}</td>
+                    <td style="text-align: center;" class="aud-mrp">${b.mrp.toFixed(2)}</td>
+                    <td style="text-align: center; font-size: 16px; font-weight: 900; color: #15803d; background: #e8f5e9;" class="aud-sys-qty">${b.stock}</td>
+                    <td style="text-align: center; background: #fff5f5;">
+                        <input type="number" class="aud-phys-qty" value="${b.stock}" min="0" oninput="calcAuditVariance(this)" onfocus="this.select()" style="width: 80%; padding: 6px; text-align: center; border: 2px solid #e74c3c; border-radius: 4px; outline: none; font-size: 16px; font-weight: bold; color: #c62828;">
+                    </td>
+                    <td style="text-align: center; font-weight: bold; font-size: 15px;" class="aud-variance">0</td>
+                    <td style="text-align: right; font-weight: bold;" class="aud-val-diff">0.00</td>
+                    <td style="text-align: center;"><button class="action-icon danger" onclick="this.parentElement.parentElement.remove(); calculateAuditNetValue();"><span class="material-symbols-outlined">delete</span></button></td>
+                `;
+                tbody.appendChild(tr);
+            }
+        });
+        calculateAuditNetValue();
+    }
 </script>
 <!-- 🔴 INCIDENT MODAL -->
 <div id="incidentModal" class="modalOverlay" style="display:none;">
