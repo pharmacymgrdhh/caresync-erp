@@ -658,60 +658,136 @@
                     </div>
                 </section>
                 <section id="pharmacyView-inventory" class="pharmacy-view">
-                    <div class="module-shell" style="max-width: 1200px; margin: 0 auto;">
-                        <div class="module-header" style="border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
-                            <h2>📦 Physical Stock Audit (Reconciliation)</h2>
+                    <div class="module-shell" style="max-width: 1300px; margin: 0 auto;">
+                        <div class="module-header" style="margin-bottom: 10px;">
+                            <h2 style="font-size: 24px;">📦 Inventory Control & Audit</h2>
                         </div>
                         
-                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffe0b2; margin-top: 20px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="flex: 1; position: relative;">
-                                <label style="font-weight: bold; color: #e67e22; font-size: 13px; display: block; margin-bottom: 5px;">Scan or Search Medicine to Audit (Loads all batches of that medicine):</label>
-                                <input type="text" id="auditMedSearch" placeholder="🔍 Search medicine by name or code..." autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-size: 15px; font-weight: bold; color: #2c598f;">
-                                <div id="auditMedDropdown" class="autocomplete-items" style="z-index: 200;"></div>
-                            </div>
-                        </div>
-                        <!-- 🔴 NEW: AUTO LOAD AUDIT BUTTONS -->
-                        <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; align-items: center;">
-                            <span style="font-size: 13px; font-weight: bold; color: #475569; display: flex; align-items: center; margin-right: 10px;">⚡ Auto Load:</span>
-                            <button class="small-action primary" style="background: #f39c12; border-color: #f39c12;" onclick="loadBulkAudit('FAST_50')">Top 50 Fast Moving</button>
-                            <button class="small-action primary" style="background: #27ae60; border-color: #27ae60;" onclick="loadBulkAudit('HIGH_20')">Top 20 High Value</button>
-                            <button class="small-action primary" style="background: #8e44ad; border-color: #8e44ad;" onclick="loadBulkAudit('RANDOM_50')">Random 50 Products</button>
-                            <button class="small-action primary" style="background: #34495e; border-color: #34495e;" onclick="loadBulkAudit('ALL_RACK')">Load All (Rack-wise)</button>
-                            <button class="small-action" style="border: 1px solid #e74c3c; color: #e74c3c; margin-left: auto;" onclick="clearAuditTable()">Clear List</button>
+                        <!-- 🔴 Navigation Tabs (New) -->
+                        <div class="im-tabs">
+                            <button class="im-tab-btn active" onclick="switchInvTab('inv-audit', this)">Physical Stock Audit</button>
+                            <button class="im-tab-btn" onclick="switchInvTab('inv-expiry', this)">Expiry & Shelf-Life Dashboard ⏳</button>
                         </div>
 
-                        <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-                            <div class="table-scroll-container" style="max-height: 400px; border: none; border-radius: 0;">
-                                <table class="erp-pro-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                                    <thead style="background:#f8fafc; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
-                                        <tr>
-                                            <th style="padding: 12px; text-align: left; color: #475569; width: 10%;">Code</th>
-                                            <th style="padding: 12px; text-align: left; color: #475569; width: 25%;">Medicine Name</th>
-                                            <th style="padding: 12px; text-align: center; color: #475569; width: 15%;">Batch & Exp</th>
-                                            <th style="padding: 12px; text-align: center; color: #475569; width: 8%;">MRP (₹)</th>
-                                            <th style="padding: 12px; text-align: center; background:#e8f5e9; color:#1b5e20; width: 10%;">System Stock</th>
-                                            <th style="padding: 12px; text-align: center; background:#fff5f5; color:#c62828; width: 12%;">Physical Stock</th>
-                                            <th style="padding: 12px; text-align: center; color: #475569; width: 8%;">Variance</th>
-                                            <th style="padding: 12px; text-align: right; color: #475569; width: 10%;">Value Diff (₹)</th>
-                                            <th style="padding: 12px; text-align: center; color: #475569; width: 2%;">X</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="auditTableBody">
-                                        <tr><td colspan="9" style="text-align:center; padding: 40px; color: #94a3b8; font-size: 15px;">Search and select a medicine from above to start auditing.</td></tr>
-                                    </tbody>
-                                </table>
+                        <!-- 🟢 TAB 1: PHYSICAL STOCK AUDIT (EXISTING CODE) -->
+                        <div id="inv-audit" class="im-tab-content active">
+                            <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border: 1px solid #ffe0b2; margin-top: 10px; display: flex; gap: 15px; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="flex: 1; position: relative;">
+                                    <label style="font-weight: bold; color: #e67e22; font-size: 13px; display: block; margin-bottom: 5px;">Scan or Search Medicine to Audit (Loads all batches of that medicine):</label>
+                                    <input type="text" id="auditMedSearch" placeholder="🔍 Search medicine by name or code..." autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-size: 15px; font-weight: bold; color: #2c598f;">
+                                    <div id="auditMedDropdown" class="autocomplete-items" style="z-index: 200;"></div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; align-items: center;">
+                                <span style="font-size: 13px; font-weight: bold; color: #475569; display: flex; align-items: center; margin-right: 10px;">⚡ Auto Load:</span>
+                                <button class="small-action primary" style="background: #f39c12; border-color: #f39c12;" onclick="loadBulkAudit('FAST_50')">Top 50 Fast Moving</button>
+                                <button class="small-action primary" style="background: #27ae60; border-color: #27ae60;" onclick="loadBulkAudit('HIGH_20')">Top 20 High Value</button>
+                                <button class="small-action primary" style="background: #8e44ad; border-color: #8e44ad;" onclick="loadBulkAudit('RANDOM_50')">Random 50 Products</button>
+                                
+                                <div style="border-left: 2px solid #cbd5e1; margin: 0 5px; height: 30px;"></div>
+                                <select id="auditRackSelect" style="padding: 8px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-weight: bold; color: #2c598f; font-size: 13px;">
+                                    <option value="">-- Select Rack --</option>
+                                </select>
+                                <button class="small-action primary" style="background: #34495e; border-color: #34495e;" onclick="loadBulkAudit('RACK_WISE')">Load Selected Rack</button>
+                                
+                                <button class="small-action" style="border: 1px solid #e74c3c; color: #e74c3c; margin-left: auto;" onclick="clearAuditTable()">Clear List</button>
+                            </div>
+
+                            <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                                <div class="table-scroll-container" style="max-height: 400px; border: none; border-radius: 0;">
+                                    <table class="erp-pro-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                        <thead style="background:#f8fafc; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                            <tr>
+                                                <th style="padding: 12px; text-align: left; color: #475569; width: 10%;">Code</th>
+                                                <th style="padding: 12px; text-align: left; color: #475569; width: 25%;">Medicine Name</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 15%;">Batch & Exp</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 8%;">MRP (₹)</th>
+                                                <th style="padding: 12px; text-align: center; background:#e8f5e9; color:#1b5e20; width: 10%;">System Stock</th>
+                                                <th style="padding: 12px; text-align: center; background:#fff5f5; color:#c62828; width: 12%;">Physical Stock</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 8%;">Variance</th>
+                                                <th style="padding: 12px; text-align: right; color: #475569; width: 10%;">Value Diff (₹)</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 2%;">X</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="auditTableBody">
+                                            <tr><td colspan="9" style="text-align:center; padding: 40px; color: #94a3b8; font-size: 15px;">Search and select a medicine from above to start auditing.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: flex-end; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="width: 50%;">
+                                    <label style="font-size:13px; font-weight:bold; color:#64748b; margin-bottom:5px; display:block;">Audit Remarks / Reason for Variance <span style="color:red">*</span></label>
+                                    <input type="text" id="auditRemarks" placeholder="E.g. Expired items removed / Found extra stock in rack / Routine Audit" style="padding:12px; border:1px solid #ced4da; outline:none; border-radius:4px; width:100%; font-size:14px; color: #334155;">
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 13px; color: #64748b; font-weight: bold; margin-bottom: 5px;">NET VARIANCE VALUE</div>
+                                    <div style="font-size: 26px; font-weight: 900;" id="auditNetValueDisplay">₹ 0.00</div>
+                                    <button class="btn-dispatch" style="background-color: #4f46e5; padding: 12px 30px; font-size: 15px; margin-top: 15px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);" onclick="submitStockAudit()">Submit Audit & Adjust Stock ➔</button>
+                                </div>
                             </div>
                         </div>
 
-                        <div style="display: flex; justify-content: space-between; align-items: flex-end; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="width: 50%;">
-                                <label style="font-size:13px; font-weight:bold; color:#64748b; margin-bottom:5px; display:block;">Audit Remarks / Reason for Variance <span style="color:red">*</span></label>
-                                <input type="text" id="auditRemarks" placeholder="E.g. Expired items removed / Found extra stock in rack / Routine Audit" style="padding:12px; border:1px solid #ced4da; outline:none; border-radius:4px; width:100%; font-size:14px; color: #334155;">
+                        <!-- 🟢 TAB 2: EXPIRY & SHELF LIFE DASHBOARD (NEW MODULE) -->
+                        <div id="inv-expiry" class="im-tab-content">
+                            <!-- KPI Cards -->
+                            <div class="pharmacy-kpis" style="grid-template-columns: repeat(3, 1fr);">
+                                <div class="kpi-card" style="border-left: 4px solid #ef4444; background: #fef2f2; cursor: pointer; transition: 0.2s;" onclick="filterExpiryList(-1)">
+                                    <div class="kpi-label" style="color: #b91c1c;">Expired Stock (Unsalable)</div>
+                                    <div class="kpi-value" id="exp_kpiExpired" style="color: #ef4444; font-size: 26px;">₹ 0.00</div>
+                                </div>
+                                <div class="kpi-card" style="border-left: 4px solid #f59e0b; background: #fffbeb; cursor: pointer; transition: 0.2s;" onclick="filterExpiryList(3)">
+                                    <div class="kpi-label" style="color: #d97706;">Near Expiry (Next 3 Months)</div>
+                                    <div class="kpi-value" id="exp_kpiNear" style="color: #f59e0b; font-size: 26px;">₹ 0.00</div>
+                                </div>
+                                <div class="kpi-card" style="border-left: 4px solid #10b981; background: #f0fdf4; cursor: pointer; transition: 0.2s;" onclick="filterExpiryList(6)">
+                                    <div class="kpi-label" style="color: #047857;">Upcoming Expiry (4 to 6 Months)</div>
+                                    <div class="kpi-value" id="exp_kpiUpcoming" style="color: #10b981; font-size: 26px;">₹ 0.00</div>
+                                </div>
                             </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 13px; color: #64748b; font-weight: bold; margin-bottom: 5px;">NET VARIANCE VALUE</div>
-                                <div style="font-size: 26px; font-weight: 900;" id="auditNetValueDisplay">₹ 0.00</div>
-                                <button class="btn-dispatch" style="background-color: #4f46e5; padding: 12px 30px; font-size: 15px; margin-top: 15px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);" onclick="submitStockAudit()">Submit Audit & Adjust Stock ➔</button>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <label style="font-weight: bold; color: #475569; font-size: 13px;">Filter By:</label>
+                                    <select id="expFilterSelect" onchange="filterExpiryList(this.value)" style="padding: 8px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-weight: bold; color: #2c598f; font-size: 13px;">
+                                        <option value="ALL">Show All Risk Stock (<= 6 Months)</option>
+                                        <option value="-1">Expired Stock Only</option>
+                                        <option value="3">Near Expiry (<= 3 Months)</option>
+                                        <option value="6">Upcoming Expiry (4 to 6 Months)</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button class="btn-dispatch" style="background-color: #e74c3c; margin: 0; padding: 8px 15px; font-size: 13px; display: flex; align-items: center; gap: 5px;" onclick="sendExpiryToReturn()">
+                                        <span class="material-symbols-outlined" style="font-size: 16px;">move_up</span> Send to Vendor Return ➔
+                                    </button>
+                                    <button class="small-action primary" style="background: #2c598f; border-color: #2c598f; margin: 0;" onclick="printExpiryReport()">🖨️ Print Report</button>
+                                </div>
+                            </div>
+
+                            <!-- Expiry Data Table -->
+                            <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                                <div class="table-scroll-container" style="max-height: 450px; border: none; border-radius: 0;">
+                                    <table class="erp-pro-table" id="expiryPrintTable" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                        <thead style="background:#f8fafc; position: sticky; top: 0; z-index: 10; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                            <tr>
+                                                <th style="padding: 12px; text-align: center; width: 4%;"><input type="checkbox" id="selectAllExp" onclick="toggleAllExpCB(this)" style="width:16px; height:16px; cursor:pointer;"></th>
+                                                <th style="padding: 12px; text-align: left; color: #475569; width: 10%;">Code</th>
+                                                <th style="padding: 12px; text-align: left; color: #475569; width: 23%;">Medicine Name</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 10%;">Rack</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 12%;">Batch</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 10%;">Exp Date</th>
+                                                <th style="padding: 12px; text-align: center; color: #1b5e20; width: 10%;">Live Qty</th>
+                                                <th style="padding: 12px; text-align: right; color: #475569; width: 10%;">Value (₹)</th>
+                                                <th style="padding: 12px; text-align: center; color: #475569; width: 11%;">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="expTableBody">
+                                            <tr><td colspan="9" style="text-align:center; padding: 40px; color: #94a3b8; font-size: 15px;">Loading Expiry Data...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -974,58 +1050,126 @@
                 </section>
                 </section>
                 <section id="pharmacyView-returns" class="pharmacy-view">
-                    <div class="module-shell">
-                        <div class="module-header">
-                            <h2>Sale Return (Consolidated Patient Refund)</h2>
+                    <div class="module-shell" style="max-width: 1300px;">
+                        <div class="module-header" style="margin-bottom: 10px;">
+                            <h2 style="font-size: 24px;">🔄 Returns & Debit Notes</h2>
                         </div>
                         
-                        <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #d1e3e8; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr 1.5fr 1.5fr 1fr; gap: 10px; align-items: end;">
-                                <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">From Date</label><input type="date" id="rtnFromDate" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none;"></div>
-                                <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">To Date</label><input type="date" id="rtnToDate" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none;"></div>
-                                <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">Patient MRN</label><input type="text" id="rtnSearchMRN" placeholder="E.g. MRN-102" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none; text-transform:uppercase;"></div>
-                                <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">Patient Name</label><input type="text" id="rtnSearchPatName" placeholder="Enter Patient Name" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none;"></div>
-                                <div><label style="font-size:12px; font-weight:bold; color:#e74c3c;">Bill No (Fast Search)</label><input type="text" id="rtnSearchBillNo" placeholder="E.g. BILL-..." style="padding:8px; border-radius:4px; border:1px solid #ffcdd2; background:#fff5f5; width:100%; outline:none; text-transform:uppercase;"></div>
-                                <div><button class="btn-dispatch" style="margin:0; background-color:#4276b6; width:100%; padding:10px;" onclick="searchConsolidatedPatient()"> Search</button></div>
-                            </div>
-                            <div style="font-size:11px; color:#e74c3c; margin-top:8px;">* Enter at least one criteria: Patient Name, MRN, or Bill No.</div>
+                        <!-- 🔴 Navigation Tabs -->
+                        <div class="im-tabs">
+                            <button class="im-tab-btn active" onclick="switchReturnTab('rtn-patient', this)">Patient Return (Sale Refund)</button>
+                            <button class="im-tab-btn" onclick="switchReturnTab('rtn-vendor', this)">Vendor Return (Debit Note)</button>
                         </div>
 
-                        <div id="rtnPatientSection" style="display: none; background: white; padding: 20px; border-radius: 8px; border: 1px solid #d1e3e8; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; margin-bottom: 15px; font-size: 14px; color: #2c598f; background: #f0f8fa; padding: 12px; border-radius: 6px; border: 1px solid #d1e3e8;">
-                                <div><strong>MRN:</strong> <span id="rtnConsMRN" style="color:#e74c3c; font-weight:bold;">-</span></div>
-                                <div><strong>Patient:</strong> <span id="rtnConsPatient" style="color:#333; font-weight:bold;">-</span></div>
-                                <div>
-                                    <strong>Primary Account Type:</strong> <span id="rtnConsType" style="color:white; background:#2c598f; padding:2px 8px; border-radius:12px; font-size:12px;">-</span>
-                                    <span id="rtnCreditWarning" style="color:red; font-weight:bold; font-size:12px; display:none; margin-left:10px;">⚠️ AMOUNT WILL BE ADJUSTED IN CREDIT</span>
+                        <!-- 🟢 TAB 1: PATIENT RETURN (EXISTING CODE) -->
+                        <div id="rtn-patient" class="im-tab-content active">
+                            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #d1e3e8; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1.5fr 1.5fr 1.5fr 1fr; gap: 10px; align-items: end;">
+                                    <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">From Date</label><input type="date" id="rtnFromDate" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none;"></div>
+                                    <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">To Date</label><input type="date" id="rtnToDate" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none;"></div>
+                                    <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">Patient MRN</label><input type="text" id="rtnSearchMRN" placeholder="E.g. MRN-102" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none; text-transform:uppercase;"></div>
+                                    <div><label style="font-size:12px; font-weight:bold; color:#4276b6;">Patient Name</label><input type="text" id="rtnSearchPatName" placeholder="Enter Patient Name" style="padding:8px; border-radius:4px; border:1px solid #ced4da; width:100%; outline:none;"></div>
+                                    <div><label style="font-size:12px; font-weight:bold; color:#e74c3c;">Bill No (Fast Search)</label><input type="text" id="rtnSearchBillNo" placeholder="E.g. BILL-..." style="padding:8px; border-radius:4px; border:1px solid #ffcdd2; background:#fff5f5; width:100%; outline:none; text-transform:uppercase;"></div>
+                                    <div><button class="btn-dispatch" style="margin:0; background-color:#4276b6; width:100%; padding:10px;" onclick="searchConsolidatedPatient()"> Search</button></div>
                                 </div>
                             </div>
-                            
-                            <table class="p-table" style="font-size: 13px; margin-top: 0; border: none;">
-                                <thead style="background-color: #f3f4f6;">
-                                    <tr>
-                                        <th style="width: 5%;">Sr</th>
-                                        <th style="width: 30%;">Medicine Name</th>
-                                        <th style="width: 15%;">Batch</th>
-                                        <th style="width: 12%; text-align: center; background:#e8f5e9; color:#1b5e20;">Total Bought Qty</th>
-                                        <th style="width: 10%; text-align: right;">Net Rate (₹)</th>
-                                        <th style="width: 13%; text-align: center; background-color: #ffebee; color: #c62828;">Return Qty</th>
-                                        <th style="width: 15%; text-align: right;">Refund Amt (₹)</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="rtnConsItemsBody"></tbody>
-                            </table>
-                            
-                            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-                                <div class="bill-total-box" style="margin-top: 0; min-width: 300px; background: #fff5f5; border-color: #fed7d7; color: #c62828;">
-                                    <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;" id="lblRefundText">TOTAL REFUND AMOUNT</div>
-                                    <strong style="font-size: 28px;">₹ <span id="rtnTotalRefund">0.00</span></strong>
+
+                            <div id="rtnPatientSection" style="display: none; background: white; padding: 20px; border-radius: 8px; border: 1px solid #d1e3e8; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 2fr; margin-bottom: 15px; font-size: 14px; color: #2c598f; background: #f0f8fa; padding: 12px; border-radius: 6px; border: 1px solid #d1e3e8;">
+                                    <div><strong>MRN:</strong> <span id="rtnConsMRN" style="color:#e74c3c; font-weight:bold;">-</span></div>
+                                    <div><strong>Patient:</strong> <span id="rtnConsPatient" style="color:#333; font-weight:bold;">-</span></div>
+                                    <div><strong>Primary Account Type:</strong> <span id="rtnConsType" style="color:white; background:#2c598f; padding:2px 8px; border-radius:12px; font-size:12px;">-</span></div>
+                                </div>
+                                <table class="p-table" style="font-size: 13px; margin-top: 0; border: none;">
+                                    <thead style="background-color: #f3f4f6;">
+                                        <tr><th style="width: 5%;">Sr</th><th style="width: 30%;">Medicine Name</th><th style="width: 15%;">Batch</th><th style="width: 12%; text-align: center; background:#e8f5e9; color:#1b5e20;">Total Bought Qty</th><th style="width: 10%; text-align: right;">Net Rate (₹)</th><th style="width: 13%; text-align: center; background-color: #ffebee; color: #c62828;">Return Qty</th><th style="width: 15%; text-align: right;">Refund Amt (₹)</th></tr>
+                                    </thead>
+                                    <tbody id="rtnConsItemsBody"></tbody>
+                                </table>
+                                <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                                    <div class="bill-total-box" style="margin-top: 0; min-width: 300px; background: #fff5f5; border-color: #fed7d7; color: #c62828;">
+                                        <div style="font-size: 13px; font-weight: bold; margin-bottom: 5px;" id="lblRefundText">TOTAL REFUND AMOUNT</div>
+                                        <strong style="font-size: 28px;">₹ <span id="rtnTotalRefund">0.00</span></strong>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px solid #edf2f7; padding-top: 15px;">
+                                    <input type="text" id="rtnRemark" placeholder="Enter Mobile No. & Name of person receiving refund *" style="width: 350px; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px; outline: none;">
+                                    <button class="btn-dispatch" style="background-color: #e74c3c; padding: 10px 25px; font-size: 15px;" onclick="processConsolidatedReturn()">Process Return</button>
                                 </div>
                             </div>
-                            
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; border-top: 1px solid #edf2f7; padding-top: 15px;">
-                                <input type="text" id="rtnRemark" placeholder="Return Reason / Handed over by... " style="width: 350px; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px; outline: none;">
-                                <button class="btn-dispatch" style="background-color: #e74c3c; padding: 10px 25px; font-size: 15px;" onclick="processConsolidatedReturn()">Process Return</button>
+                        </div>
+
+                        <!-- 🟢 TAB 2: VENDOR RETURN (NEW MODULE) -->
+                        <div id="rtn-vendor" class="im-tab-content">
+                            <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #d1e3e8; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; align-items: end;">
+                                    <div>
+                                        <label style="font-size:12px; font-weight:bold; color:#4276b6; display:block; margin-bottom:5px;">Select Vendor <span style="color:red">*</span></label>
+                                        <div style="position: relative;">
+                                            <input type="text" id="prtnVendor" placeholder="Search Vendor Name..." autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; outline: none; font-weight: bold; color: #2c598f; box-sizing:border-box;">
+                                            <div id="prtn_vendorDropdown" class="autocomplete-items" style="display:none; z-index: 200;"></div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:12px; font-weight:bold; color:#4276b6; display:block; margin-bottom:5px;">Return Reason <span style="color:red">*</span></label>
+                                        <select id="prtnReason" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; outline: none; font-weight: bold; color: #333; box-sizing:border-box;">
+                                            <option value="Expiry / Near Expiry">Expiry / Near Expiry</option>
+                                            <option value="Damage / Breakage">Damage / Breakage</option>
+                                            <option value="Non-Moving (Dead Stock)">Non-Moving (Dead Stock)</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:12px; font-weight:bold; color:#4276b6; display:block; margin-bottom:5px;">Return Date</label>
+                                        <input type="date" id="prtnDate" readonly style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; outline: none; background: #f8fafc; color: #475569; box-sizing:border-box;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="background: #fff3e0; padding: 15px; border-radius: 6px; border: 1px solid #ffe0b2; margin-bottom: 15px;">
+                                <label style="font-weight: bold; color: #e67e22; font-size: 14px; display: block; margin-bottom: 8px;">Scan or Search Medicine to Return:</label>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <div style="flex: 3; position: relative;">
+                                        <input type="text" id="prtnMedSearch" placeholder="🔍 Search medicine..." autocomplete="off" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-size: 14px;">
+                                        <div id="prtnMedDropdown" class="autocomplete-items" style="z-index: 200;"></div>
+                                    </div>
+                                    <div style="flex: 1.5; position: relative;">
+                                        <input type="text" id="prtnBatchInput" placeholder="-- Select Batch --" autocomplete="off" readonly style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-size: 14px; background-color: #fff; cursor: pointer; font-weight: bold; color: #2c598f;" onclick="if(document.getElementById('prtnBatchList').innerHTML !== '') document.getElementById('prtnBatchList').style.display='block';">
+                                        <div id="prtnBatchList" class="autocomplete-items" style="display:none; z-index: 200; width: 100%; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <input type="number" id="prtnQtyInput" placeholder="Return Qty" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; outline:none; font-size: 14px; font-weight:bold; color:#c62828;" min="1" onkeydown="if(event.key==='Enter') addPRTNMedicine();">
+                                    </div>
+                                    <button class="btn-dispatch" style="padding: 10px 20px; margin: 0; background-color: #e67e22;" onclick="addPRTNMedicine()">+ Add</button>
+                                </div>
+                            </div>
+
+                            <div style="background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 20px;">
+                                <table class="erp-pro-table">
+                                    <thead style="background:#f8fafc;">
+                                        <tr>
+                                            <th style="width: 5%;">Sr</th>
+                                            <th style="width: 30%;">Medicine Name</th>
+                                            <th class="center" style="width: 15%;">Batch</th>
+                                            <th class="center" style="width: 12%; background:#fff5f5; color:#c62828;">Return Qty</th>
+                                            <th class="center" style="width: 10%;">Pur Rate (Est.)</th>
+                                            <th class="center" style="width: 8%;">GST %</th>
+                                            <th class="center" style="width: 15%;">Total Value (₹)</th>
+                                            <th class="center" style="width: 5%;">Act</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="prtnTableBody">
+                                        <tr><td colspan="8" style="text-align:center; padding: 40px; color:#94a3b8; font-size:15px;">Search and select medicine to add to Return List.</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div style="display: flex; justify-content: flex-end; align-items: flex-end; background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                <div style="text-align: right;">
+                                    <div style="font-size: 13px; color: #64748b; font-weight: bold; margin-bottom: 5px;">TOTAL DEBIT NOTE VALUE (Inc. GST)</div>
+                                    <div style="font-size: 28px; font-weight: bold; color: #e67e22;">₹ <span id="prtnTotalValue">0.00</span></div>
+                                    <button class="btn-dispatch" style="background-color: #8e44ad; padding: 12px 30px; font-size: 15px; margin-top: 15px;" onclick="submitPurchaseReturn()">Generate Debit Note ➔</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2008,6 +2152,78 @@
             </div>
         </div>
     </div>
+    <!-- 🔴 INCIDENT MODAL -->
+<div id="incidentModal" class="modalOverlay" style="display:none;">
+    <div class="modalBox">
+        <div class="modalHeader">
+            <h3><span class="material-symbols-outlined" style="color:#e74c3c;">assignment_late</span> Patient Safety Log</h3>
+            <button class="modalCloseBtn" onclick="document.getElementById('incidentModal').style.display='none'" title="Close">✕</button>
+        </div>
+        <div class="modalBody">
+            <div class="modalGrid">
+                <div class="inc-form-group">
+                    <label>Reference (Indent No)</label>
+                    <input type="text" id="incReference" readonly style="background:#e2e8f0; font-weight:bold; color:#1e293b; cursor:not-allowed;">
+                </div>
+                <div class="inc-form-group">
+                    <label>When Happened <span style="color:red;">*</span></label>
+                    <input type="datetime-local" id="incWhen">
+                </div>
+                <div class="inc-form-group">
+                    <label>Where Happened (Unit)</label>
+                    <input type="text" id="incWhere" readonly style="background:#e2e8f0; color:#475569; cursor:not-allowed;">
+                </div>
+                <div class="inc-form-group">
+                    <label>Department (Ward/Pharmacy)</label>
+                    <input type="text" id="incDepartment" readonly style="background:#e2e8f0; color:#475569; cursor:not-allowed;">
+                </div>
+                <div class="inc-form-group">
+                    <label>Involved Staff</label>
+                    <input type="text" id="incStaff" placeholder="Name or ID">
+                </div>
+            </div>
+            <div class="modalGrid full">
+                <div class="inc-form-group">
+                    <label>Patient ID (If Available)</label>
+                    <input type="text" id="incPatientId" placeholder="Enter Patient ID">
+                </div>
+                <div class="inc-form-group">
+                    <label>Description <span style="color:red;">*</span></label>
+                    <textarea id="incDescription" rows="4" placeholder="Briefly describe exactly what happened..."></textarea>
+                </div>
+                <div class="inc-form-group">
+                    <label>Immediate Action Taken</label>
+                    <textarea id="incImmediateAction" rows="3" placeholder="What steps were taken immediately?"></textarea>
+                </div>
+            </div>
+            <div class="modalGrid">
+                <div class="inc-form-group">
+                    <label>Supporting Images (Maximum 3, JPG, 2 MB each)</label>
+                    <input type="file" id="incPhoto" accept=".jpg,.jpeg,image/jpeg" multiple style="padding:7px 10px;">
+                    <small style="display:block; margin-top:5px; color:#666;">Maximum 3 photos • JPG/JPEG only • 2 MB per photo</small>
+                    <div id="photoPreviewContainer" style="margin-top:10px;"></div>
+                </div>
+                <div class="inc-form-group">
+                    <label>Doctor / Nursing Staff Informed?</label>
+                    <select id="incDoctorInformed" onchange="toggleInformedName()">
+                        <option value="No">No</option>
+                        <option value="Yes">Yes</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modalGrid full" id="divInformedName" style="display:none; margin-top:-5px; margin-bottom:15px;">
+                <div class="inc-form-group">
+                    <label>Name & Designation of Informed Staff <span style="color:red;">*</span></label>
+                    <input type="text" id="incInformedName" placeholder="e.g. Dr. Ramesh (RMO) or Sister Sunita (Incharge)">
+                </div>
+            </div>
+        </div>
+        <div class="modalFooter">
+            <button class="btn-cancel" onclick="document.getElementById('incidentModal').style.display='none'">Cancel</button>
+            <button class="btn-submit-inc" onclick="submitIncident()">Submit Final Report</button>
+        </div>
+    </div>
+</div> 
 
     <script>
     const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzm5uU7min4U-Dpc4wktY8Fkkl9OJoPA18N5jmjYNY11VvWiXvwX5AVpsZEYdxexKji/exec';
@@ -2217,6 +2433,23 @@
             
             // 🔴 ही नवीन लाईन इथे ऍड केली आहे:
             if(data.vendorDetails) globalVendorDetails = data.vendorDetails; 
+
+            let rackSelect = document.getElementById('auditRackSelect');
+            if(rackSelect && globalMedDetails) {
+                let uniqueRacks = new Set();
+                // globalMedDetails मधील rack वाचून Set मध्ये टाकणे (डुप्लिकेट्स टाळण्यासाठी)
+                globalMedDetails.forEach(m => { 
+                    if(m.rack && String(m.rack).trim() !== "") {
+                        uniqueRacks.add(String(m.rack).trim()); 
+                    } 
+                });
+                
+                rackSelect.innerHTML = '<option value="">-- Select Rack --</option>';
+                // A-Z क्रमाने नावे लावून ड्रॉपडाऊनमध्ये भरणे
+                Array.from(uniqueRacks).sort().forEach(r => {
+                    rackSelect.innerHTML += `<option value="${r}">${r}</option>`;
+                });
+            }
             
             document.querySelectorAll('.loading-text').forEach(el => el.style.display = 'none');
         });
@@ -6194,11 +6427,10 @@
         calculateAuditNetValue();
     }
 
-    // 🔴 6. Bulk Auto-Load Logic (Fast Moving, High Value, Random, All)
+    // 🔴 Bulk Auto-Load Logic (Fast Moving, High Value, Random, Rack-wise)
     function loadBulkAudit(type) {
         let baseUnit = loggedInUnit.toUpperCase().replace("-PHARMACY", "").trim();
         
-        // 1. Combine batches with MedDetails to get names and calculate values
         let allStock = globalBatches.map(b => {
             let med = globalMedDetails.find(m => Number(m.code) === Number(b.code));
             return {
@@ -6207,47 +6439,49 @@
                 batchExp: b.batchExp,
                 stock: parseFloat(b.stock) || 0,
                 mrp: parseFloat(b.mrp) || 0,
+                rack: med ? med.rack : "", // 🔴 Rack Location
                 value: (parseFloat(b.stock) || 0) * (parseFloat(b.mrp) || 0)
             };
-        }).filter(item => item.stock > 0); // फक्त ज्याचा स्टॉक सिस्टीममध्ये आहे तेच घ्या
+        }).filter(item => item.stock > 0);
 
         if (allStock.length === 0) return alert("No active stock found in system for this unit.");
 
         let selectedItems = [];
 
         if (type === 'HIGH_20') {
-            // High Value: MRP * Stock ने Sorting करा आणि टॉप २० घ्या
             allStock.sort((a, b) => b.value - a.value);
             selectedItems = allStock.slice(0, 20);
             showToast("Loaded Top 20 High Value Products", "success");
         } 
         else if (type === 'FAST_50') {
-            // Fast Moving: Local Storage मधील History (Search Count) वरून ठरवा
             let pHist = JSON.parse(localStorage.getItem('careSync_pharmaHistory')) || {};
             allStock.sort((a, b) => (pHist[b.code] || 0) - (pHist[a.code] || 0));
             selectedItems = allStock.slice(0, 50);
             showToast("Loaded Top 50 Fast Moving Products", "success");
         } 
         else if (type === 'RANDOM_50') {
-            // Random 50: लिस्ट शफल (Shuffle) करा
             let shuffled = allStock.sort(() => 0.5 - Math.random());
             selectedItems = shuffled.slice(0, 50);
             showToast("Loaded Random 50 Products", "success");
         }
-        else if (type === 'ALL_RACK') {
-            // All (Rack-wise): A to Z अल्फाबेटिकल Sorting करा म्हणजे रॅकप्रमाणे सापडतील
-            allStock.sort((a, b) => a.name.localeCompare(b.name));
-            selectedItems = allStock;
-            showToast(`Loaded All ${allStock.length} Products`, "success");
+        else if (type === 'RACK_WISE') {
+            // 🔴 नवीन रॅक-वाईज लॉजिक
+            let selRack = document.getElementById('auditRackSelect').value;
+            if(!selRack) return alert("Please select a Rack from the dropdown first!");
+            
+            selectedItems = allStock.filter(item => item.rack === selRack);
+            
+            if(selectedItems.length === 0) return alert(`No active stock found in ${selRack}`);
+            
+            selectedItems.sort((a, b) => a.name.localeCompare(b.name));
+            showToast(`Loaded ${selectedItems.length} products from ${selRack}`, "success");
         }
 
-        // 2. Clear existing placeholder
         let tbody = document.getElementById('auditTableBody');
         if(tbody.innerHTML.includes('Search and select') || tbody.innerHTML.includes('Auto Load')) {
             tbody.innerHTML = '';
         }
 
-        // 3. Populate Table
         selectedItems.forEach(b => {
             let existingRow = document.querySelector(`#auditTableBody tr[data-code="${b.code}"][data-batch="${b.batchExp}"]`);
             if(!existingRow) {
@@ -6272,76 +6506,484 @@
         });
         calculateAuditNetValue();
     }
+    // ==========================================
+    // 🔴 VENDOR RETURN (DEBIT NOTE) LOGIC
+    // ==========================================
+    let prtnSelectedMed = null;
+    let prtnItemsList = [];
+    let prtn_currentFocus = -1;
+    let prtnBatchFocus = -1;
+
+    function switchReturnTab(tabId, btnEl) {
+        let parent = btnEl.closest('.module-shell');
+        if(!parent) return;
+        parent.querySelectorAll('.im-tab-content').forEach(el => el.classList.remove('active'));
+        parent.querySelectorAll('.im-tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btnEl.classList.add('active');
+
+        if(tabId === 'rtn-vendor') {
+            document.getElementById('prtnDate').valueAsDate = new Date();
+        }
+    }
+
+    // Initialize Vendor Search
+    setTimeout(() => {
+        setupSmartSearch('prtnVendor', 'prtn_vendorDropdown', 'vendors');
+    }, 2000);
+
+    const prtnMedInput = document.getElementById('prtnMedSearch'); 
+    const prtnMedDropdown = document.getElementById('prtnMedDropdown'); 
+    
+    if(prtnMedInput) {
+        prtnMedInput.addEventListener('keydown', function(e) {
+            let x = document.getElementById("prtnMedDropdown").getElementsByClassName("med-item"); if (!x || x.length === 0) return;
+            if (e.key === "ArrowDown") { prtn_currentFocus++; _addActive(x, prtn_currentFocus); e.preventDefault();} 
+            else if (e.key === "ArrowUp") { prtn_currentFocus--; _addActive(x, prtn_currentFocus); e.preventDefault();} 
+            else if (e.key === "Enter") { e.preventDefault(); if (prtn_currentFocus > -1) x[prtn_currentFocus].click(); }
+        });
+        
+        function _addActive(x, focusIdx) { 
+            for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); 
+            if (focusIdx >= x.length) prtn_currentFocus = 0; if (focusIdx < 0) prtn_currentFocus = (x.length - 1); 
+            x[prtn_currentFocus].classList.add("autocomplete-active"); x[prtn_currentFocus].scrollIntoView({ block: "nearest", behavior: "smooth" }); 
+        }
+        
+        prtnMedInput.addEventListener('input', function() {
+            prtn_currentFocus = -1; let val = this.value.toUpperCase().replace(/-/g, ' ').trim(); prtnMedDropdown.innerHTML = ''; if(!val) { prtnMedDropdown.style.display = 'none'; return; }
+            let tokens = val.split(" ");
+            let count = 0;
+            
+            for (let i = 0; i < globalMedDetails.length; i++) {
+                let m = globalMedDetails[i]; 
+                let searchSpace = (m.code + " " + m.name).toUpperCase().replace(/-/g, ' '); 
+                if (tokens.every(token => searchSpace.includes(token))) {
+                    let div = document.createElement('div'); div.className = "med-item"; 
+                    div.innerHTML = `<div class="med-brand">${m.name.split("|")[0].trim()} <span style="font-size:11px; color:#4276b6;">[${m.code}]</span></div>`;
+                    
+                    div.addEventListener('click', function() { 
+                        prtnSelectedMed = m;
+                        prtnMedInput.value = m.name.split("|")[0].trim();
+                        prtnMedDropdown.style.display = 'none'; 
+                        
+                        let bInput = document.getElementById('prtnBatchInput');
+                        let bDropdown = document.getElementById('prtnBatchList');
+                        bInput.value = ""; bDropdown.innerHTML = '';
+                        
+                        let availableBatches = globalBatches.filter(b => Number(b.code) === Number(m.code) && parseFloat(b.stock) > 0);
+                        
+                        if (availableBatches.length === 0) {
+                            bInput.value = "No Stock"; document.getElementById('prtnMedSearch').focus(); return;
+                        }
+
+                        availableBatches.forEach((b) => { 
+                            let bDiv = document.createElement('div'); bDiv.className = "med-item";
+                            bDiv.innerHTML = `<div style="display:flex; justify-content:space-between; width:100%;">
+                                <strong>${b.batchExp}</strong><span style="color:#27ae60; font-weight:bold;">Stock: ${b.stock}</span>
+                            </div>`;
+                            bDiv.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                bInput.value = b.batchExp;
+                                bInput.setAttribute('data-mrp', b.mrp);
+                                bInput.setAttribute('data-stock', b.stock);
+                                let estPurRate = (b.mrp * 0.70).toFixed(2);
+                                bInput.setAttribute('data-purrate', estPurRate); 
+                                bDropdown.style.display = 'none';
+                                document.getElementById('prtnQtyInput').focus(); 
+                            });
+                            bDropdown.appendChild(bDiv);
+                        });
+                        
+                        if(availableBatches.length === 1) { bDropdown.children[0].click(); } 
+                        else { bInput.value = "-- Select Batch --"; bDropdown.style.display = 'block'; bInput.focus(); prtnBatchFocus = 0; }
+                    });
+                    prtnMedDropdown.appendChild(div); count++;
+                }
+                if(count > 25) break;
+            }
+            prtnMedDropdown.style.display = count > 0 ? 'block' : 'none';
+        });
+        
+        document.addEventListener('click', function(e) { 
+            if (e.target !== prtnMedInput) prtnMedDropdown.style.display = 'none'; 
+            if (e.target !== document.getElementById('prtnBatchInput')) document.getElementById('prtnBatchList').style.display = 'none';
+        });
+    }
+
+    function addPRTNMedicine() {
+        let m = prtnSelectedMed;
+        let qty = parseFloat(document.getElementById('prtnQtyInput').value);
+        let batchInput = document.getElementById('prtnBatchInput');
+        let batchExp = batchInput.value;
+        
+        if(!m) return alert("Select medicine first!");
+        if(!batchExp || batchExp.includes("--") || batchExp === "No Stock") return alert("Select valid batch!");
+        if(isNaN(qty) || qty <= 0) return alert("Enter valid quantity!");
+
+        let stock = parseFloat(batchInput.getAttribute('data-stock')) || 0;
+        if(qty > stock) { alert(`Insufficient Stock! Available: ${stock}`); qty = stock; document.getElementById('prtnQtyInput').value = stock; return; }
+
+        let purRate = parseFloat(batchInput.getAttribute('data-purrate')) || 0;
+        let gst = m.gst || 0;
+
+        let itemId = new Date().getTime();
+        prtnItemsList.push({
+            id: itemId, code: m.code, name: m.name.split("|")[0].trim(), batch: batchExp, qty: qty, purRate: purRate, gst: gst, stock: stock
+        });
+
+        renderPRTNTable();
+
+        prtnSelectedMed = null;
+        document.getElementById('prtnMedSearch').value = "";
+        document.getElementById('prtnBatchInput').value = "-- Select Batch --";
+        document.getElementById('prtnQtyInput').value = "";
+        document.getElementById('prtnMedSearch').focus();
+    }
+
+    function renderPRTNTable() {
+        let tbody = document.getElementById('prtnTableBody');
+        tbody.innerHTML = '';
+        let totalVal = 0;
+
+        if (prtnItemsList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 40px; color:#94a3b8; font-size:15px;">Search and select medicine to add to Return List.</td></tr>';
+            document.getElementById('prtnTotalValue').innerText = "0.00";
+            return;
+        }
+
+        prtnItemsList.forEach((item, idx) => {
+            let baseAmt = item.qty * item.purRate;
+            let gstAmt = baseAmt * (item.gst / 100);
+            let netAmt = baseAmt + gstAmt;
+            totalVal += netAmt;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td style="text-align:center; font-weight:bold;">${idx + 1}</td>
+                    <td><b>${item.name}</b><br><span style="font-size:11px; color:#7f8c8d;">${item.code}</span></td>
+                    <td class="center">${item.batch}</td>
+                    <td class="center">
+                        <input type="number" min="1" max="${item.stock}" value="${item.qty}" onchange="updatePRTNQty(${item.id}, this.value)" style="width: 80%; padding: 6px; text-align: center; border: 2px solid #ffcdd2; border-radius: 4px; outline: none; font-weight: bold; color: #c62828;">
+                    </td>
+                    <td class="center">
+                        <input type="number" min="0" step="0.01" value="${item.purRate}" onchange="updatePRTNRate(${item.id}, this.value)" title="Estimated Pur Rate (MRP-30%). Change if required." style="width: 80%; padding: 6px; text-align: center; border: 1px solid #ced4da; border-radius: 4px; outline: none; font-weight:bold;">
+                    </td>
+                    <td class="center" style="font-weight:bold;">${item.gst}%</td>
+                    <td class="center" style="font-weight:bold; color:#1b5e20; font-size:15px;">${netAmt.toFixed(2)}</td>
+                    <td class="center">
+                        <button class="action-icon danger" onclick="removePRTNItem(${item.id})"><span class="material-symbols-outlined">delete</span></button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('prtnTotalValue').innerText = totalVal.toFixed(2);
+    }
+
+    function updatePRTNQty(id, newQty) {
+        let item = prtnItemsList.find(i => i.id === id);
+        if (item) {
+            let nq = parseFloat(newQty);
+            if (nq > item.stock) { alert('Cannot exceed available stock!'); nq = item.stock; }
+            if (nq <= 0) { alert('Qty must be at least 1'); nq = 1; }
+            item.qty = nq; renderPRTNTable();
+        }
+    }
+
+    function updatePRTNRate(id, newRate) {
+        let item = prtnItemsList.find(i => i.id === id);
+        if (item) {
+            let nr = parseFloat(newRate);
+            if (nr < 0) nr = 0; item.purRate = nr; renderPRTNTable();
+        }
+    }
+
+    function removePRTNItem(id) {
+        prtnItemsList = prtnItemsList.filter(i => i.id !== id);
+        renderPRTNTable();
+    }
+
+    async function submitPurchaseReturn() {
+        let vendor = document.getElementById('prtnVendor').value.trim();
+        let reason = document.getElementById('prtnReason').value;
+        let totalVal = parseFloat(document.getElementById('prtnTotalValue').innerText) || 0;
+        
+        if (!vendor) return alert("Please select a Vendor Name.");
+        if (prtnItemsList.length === 0) return alert("Please add at least one medicine to return.");
+
+        if(!confirm(`Are you sure you want to generate a Debit Note for ₹${totalVal} against Vendor: ${vendor}?`)) return;
+
+        if(!(await verifyUserPasskey("Generate Purchase Return (Debit Note)"))) return;
+
+        let btn = document.querySelector('#rtn-vendor .btn-dispatch');
+        let origText = btn.innerText; btn.innerText = "Processing..."; btn.disabled = true;
+
+        let payload = {
+            action: "savePurchaseReturn",
+            unitName: loggedInUnit,
+            vendorName: vendor,
+            reason: reason,
+            totalValue: totalVal,
+            items: prtnItemsList,
+            returnedBy: loggedInName,
+            approvedBy: window.lastVerifiedUser
+        };
+
+        fetch(SCRIPT_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if (data.success) {
+                showToast("Debit Note Generated! PRN: " + data.prnNo, "success");
+                alert(`✅ Debit Note Generated Successfully!\nPRN No: ${data.prnNo}\nTotal Value: ₹${totalVal}\n\nLive Stock has been deducted.`);
+                prtnItemsList = [];
+                renderPRTNTable();
+                document.getElementById('prtnVendor').value = "";
+                refreshPharmacyData(); 
+            } else { alert("Error: " + data.message); }
+        }).catch(err => {
+            btn.innerText = origText; btn.disabled = false;
+            alert("System error processing Purchase Return.");
+        });
+    }
+    // ==========================================
+    // 🔴 EXPIRY & SHELF-LIFE DASHBOARD LOGIC
+    // ==========================================
+    
+    let globalExpiryData = [];
+
+    function switchInvTab(tabId, btnEl) {
+        let parent = btnEl.closest('.module-shell');
+        if(!parent) return;
+        parent.querySelectorAll('.im-tab-content').forEach(el => el.classList.remove('active'));
+        parent.querySelectorAll('.im-tab-btn').forEach(el => el.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        btnEl.classList.add('active');
+
+        if(tabId === 'inv-expiry') {
+            loadExpiryDashboard();
+        }
+    }
+
+    function calculateMonthsLeft(batchString) {
+        let match = String(batchString).match(/(0[1-9]|1[0-2])\/\d{2,4}/);
+        if(!match) return null; 
+        
+        let parts = match[0].split('/');
+        let expM = parseInt(parts[0], 10);
+        let expY = parseInt(parts[1], 10);
+        if(expY < 100) expY += 2000; 
+        
+        let today = new Date();
+        let currM = today.getMonth() + 1;
+        let currY = today.getFullYear();
+        
+        let monthsLeft = (expY - currY) * 12 + (expM - currM);
+        return { expStr: match[0], monthsLeft: monthsLeft };
+    }
+
+    function loadExpiryDashboard() {
+        let baseUnit = loggedInUnit.toUpperCase().replace("-PHARMACY", "").trim();
+        globalExpiryData = [];
+        
+        let totalExpired = 0;
+        let totalNear = 0;
+        let totalUpcoming = 0;
+
+        let activeStock = globalBatches.filter(b => parseFloat(b.stock) > 0);
+
+        activeStock.forEach(b => {
+            let mInfo = globalMedDetails.find(m => Number(m.code) === Number(b.code));
+            if(!mInfo) return;
+            
+            let expCalc = calculateMonthsLeft(b.batchExp);
+            if(!expCalc) return; 
+            
+            let estPurRate = parseFloat(b.mrp) * 0.70; 
+            let stockValue = parseFloat(b.stock) * estPurRate;
+            let mLeft = expCalc.monthsLeft;
+
+            let status = "";
+            let color = "";
+            
+            if (mLeft < 0) { 
+                status = "Expired"; color = "#ef4444"; totalExpired += stockValue; 
+            } else if (mLeft >= 0 && mLeft <= 3) { 
+                status = "Near Expiry"; color = "#f59e0b"; totalNear += stockValue; 
+            } else if (mLeft >= 4 && mLeft <= 6) { 
+                status = "Upcoming Expiry"; color = "#10b981"; totalUpcoming += stockValue; 
+            } else {
+                return; 
+            }
+
+            let bParts = b.batchExp.split("|");
+            let cleanBatch = bParts[0] ? bParts[0].trim() : b.batchExp;
+
+            globalExpiryData.push({
+                code: b.code,
+                name: mInfo.name.split("|")[0].trim(),
+                rack: mInfo.rack || "-",
+                batch: b.batchExp, 
+                cleanBatch: cleanBatch, 
+                expDate: expCalc.expStr,
+                qty: b.stock,
+                value: stockValue,
+                status: status,
+                color: color,
+                monthsLeft: mLeft,
+                purRate: estPurRate,
+                gst: parseFloat(mInfo.gst) || 0
+            });
+        });
+
+        let kpiExp = document.getElementById('exp_kpiExpired');
+        if(kpiExp) kpiExp.innerText = "₹ " + totalExpired.toFixed(2);
+        
+        let kpiNear = document.getElementById('exp_kpiNear');
+        if(kpiNear) kpiNear.innerText = "₹ " + totalNear.toFixed(2);
+        
+        let kpiUp = document.getElementById('exp_kpiUpcoming');
+        if(kpiUp) kpiUp.innerText = "₹ " + totalUpcoming.toFixed(2);
+
+        filterExpiryList("ALL");
+    }
+
+    function filterExpiryList(filterType) {
+        let filterSel = document.getElementById('expFilterSelect');
+        if(filterType !== "ALL" && filterSel) filterSel.value = filterType;
+        
+        let tbody = document.getElementById('expTableBody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        
+        let selectAllCB = document.getElementById('selectAllExp');
+        if(selectAllCB) selectAllCB.checked = false; 
+        
+        let filteredData = globalExpiryData;
+        if (filterType == -1) filteredData = globalExpiryData.filter(i => i.monthsLeft < 0);
+        else if (filterType == 3) filteredData = globalExpiryData.filter(i => i.monthsLeft >= 0 && i.monthsLeft <= 3);
+        else if (filterType == 6) filteredData = globalExpiryData.filter(i => i.monthsLeft >= 4 && i.monthsLeft <= 6);
+
+        filteredData.sort((a, b) => a.monthsLeft - b.monthsLeft);
+
+        if (filteredData.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding: 30px; font-weight:bold; color: #166534;">🎉 Great! No risk stock found for this category.</td></tr>`;
+            return;
+        }
+
+        filteredData.forEach(item => {
+            let rowBg = item.monthsLeft < 0 ? "#fff5f5" : "transparent"; 
+            let safeName = String(item.name).replace(/"/g, '&quot;');
+            
+            tbody.innerHTML += `
+                <tr style="background: ${rowBg};">
+                    <td style="text-align:center;">
+                        <input type="checkbox" class="exp-return-cb" style="width:16px; height:16px; accent-color:#e74c3c; cursor:pointer;" 
+                            data-code="${item.code}" data-name="${safeName}" data-batch="${item.batch}" 
+                            data-qty="${item.qty}" data-purrate="${item.purRate}" data-gst="${item.gst}" data-stock="${item.qty}">
+                    </td>
+                    <td style="font-weight: bold; color: #64748b;">${item.code}</td>
+                    <td style="font-weight: bold; color: #2c598f;">${item.name}</td>
+                    <td style="text-align: center; color: #475569;">${item.rack}</td>
+                    <td style="text-align: center; font-weight: 500;">${item.cleanBatch}</td>
+                    <td style="text-align: center; font-weight: 900; color: ${item.color};">${item.expDate}</td>
+                    <td style="text-align: center; font-size: 15px; font-weight: 900; color: #15803d;">${item.qty}</td>
+                    <td style="text-align: right; font-weight: bold; color: #475569;">${item.value.toFixed(2)}</td>
+                    <td style="text-align: center;">
+                        <span style="background: ${item.color}20; color: ${item.color}; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; border: 1px solid ${item.color}40;">
+                            ${item.status}
+                        </span>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    function toggleAllExpCB(source) {
+        let checkboxes = document.querySelectorAll('.exp-return-cb');
+        checkboxes.forEach(cb => cb.checked = source.checked);
+    }
+
+    function sendExpiryToReturn() {
+        let checkboxes = document.querySelectorAll('.exp-return-cb:checked');
+        if (checkboxes.length === 0) return alert("Please select at least one Expired/Near-Expiry medicine to return.");
+
+        checkboxes.forEach(cb => {
+            let code = cb.getAttribute('data-code');
+            let name = cb.getAttribute('data-name');
+            let batch = cb.getAttribute('data-batch');
+            let qty = parseFloat(cb.getAttribute('data-qty')) || 0;
+            let purRate = parseFloat(cb.getAttribute('data-purrate')) || 0;
+            let gst = parseFloat(cb.getAttribute('data-gst')) || 0;
+            let stock = parseFloat(cb.getAttribute('data-stock')) || 0;
+
+            let exists = prtnItemsList.find(i => i.code === code && i.batch === batch);
+            if(!exists) {
+                prtnItemsList.push({
+                    id: new Date().getTime() + Math.floor(Math.random() * 1000),
+                    code: code,
+                    name: name,
+                    batch: batch,
+                    qty: qty,
+                    purRate: purRate,
+                    gst: gst,
+                    stock: stock
+                });
+            }
+        });
+
+        let sidebarReturnBtn = document.querySelector('.pharmacy-nav button[data-view="returns"]');
+        if(sidebarReturnBtn) switchPharmacyView('returns', sidebarReturnBtn);
+
+        setTimeout(() => {
+            let vendorTabBtn = document.querySelector('.im-tab-btn[onclick*="rtn-vendor"]');
+            if(vendorTabBtn) switchReturnTab('rtn-vendor', vendorTabBtn);
+            
+            if(typeof renderPRTNTable === "function") renderPRTNTable(); 
+            showToast(`${checkboxes.length} items moved to Debit Note list!`, "success");
+            
+            let selectAllCB = document.getElementById('selectAllExp');
+            if(selectAllCB) selectAllCB.checked = false;
+            checkboxes.forEach(cb => cb.checked = false);
+            
+            let venInp = document.getElementById('prtnVendor');
+            if(venInp) venInp.focus();
+        }, 300);
+    }
+
+    function printExpiryReport() {
+        let printContent = document.getElementById('expiryPrintTable').outerHTML;
+        let unitNameStr = document.getElementById('p_displayUnitName').innerText || loggedInUnit;
+        let todayStr = new Date().toLocaleDateString('en-IN');
+        
+        let html = `
+        <html><head><title>Expiry Report</title>
+        <style>
+            body { font-family: Arial, sans-serif; padding: 20px; font-size: 12px; }
+            h2 { text-align: center; margin: 0; color: #333; }
+            p { text-align: center; color: #555; font-size: 14px; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #000; padding: 8px; text-align: left; }
+            th { background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; }
+            .center { text-align: center; }
+            .right { text-align: right; }
+        </style>
+        </head><body>
+            <h2>🚨 Near Expiry & Expired Stock Report</h2>
+            <p><b>Unit:</b> ${unitNameStr} | <b>Date:</b> ${todayStr}</p>
+            ${printContent}
+            <div style="margin-top: 30px; display:flex; justify-content:space-between;">
+                <b>Report Generated By: ${loggedInName}</b>
+                <b>Pharmacy Incharge Sign</b>
+            </div>
+        <\/body><\/html>
+        `;
+
+        let printWindow = window.open('', '', 'width=900,height=600');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+    }
 </script>
-<!-- 🔴 INCIDENT MODAL -->
-<div id="incidentModal" class="modalOverlay" style="display:none;">
-    <div class="modalBox">
-        <div class="modalHeader">
-            <h3><span class="material-symbols-outlined" style="color:#e74c3c;">assignment_late</span> Patient Safety Log</h3>
-            <button class="modalCloseBtn" onclick="document.getElementById('incidentModal').style.display='none'" title="Close">✕</button>
-        </div>
-        <div class="modalBody">
-            <div class="modalGrid">
-                <div class="inc-form-group">
-                    <label>Reference (Indent No)</label>
-                    <input type="text" id="incReference" readonly style="background:#e2e8f0; font-weight:bold; color:#1e293b; cursor:not-allowed;">
-                </div>
-                <div class="inc-form-group">
-                    <label>When Happened <span style="color:red;">*</span></label>
-                    <input type="datetime-local" id="incWhen">
-                </div>
-                <div class="inc-form-group">
-                    <label>Where Happened (Unit)</label>
-                    <input type="text" id="incWhere" readonly style="background:#e2e8f0; color:#475569; cursor:not-allowed;">
-                </div>
-                <div class="inc-form-group">
-                    <label>Department (Ward/Pharmacy)</label>
-                    <input type="text" id="incDepartment" readonly style="background:#e2e8f0; color:#475569; cursor:not-allowed;">
-                </div>
-                <div class="inc-form-group">
-                    <label>Involved Staff</label>
-                    <input type="text" id="incStaff" placeholder="Name or ID">
-                </div>
-            </div>
-            <div class="modalGrid full">
-                <div class="inc-form-group">
-                    <label>Patient ID (If Available)</label>
-                    <input type="text" id="incPatientId" placeholder="Enter Patient ID">
-                </div>
-                <div class="inc-form-group">
-                    <label>Description <span style="color:red;">*</span></label>
-                    <textarea id="incDescription" rows="4" placeholder="Briefly describe exactly what happened..."></textarea>
-                </div>
-                <div class="inc-form-group">
-                    <label>Immediate Action Taken</label>
-                    <textarea id="incImmediateAction" rows="3" placeholder="What steps were taken immediately?"></textarea>
-                </div>
-            </div>
-            <div class="modalGrid">
-                <div class="inc-form-group">
-                    <label>Supporting Images (Maximum 3, JPG, 2 MB each)</label>
-                    <input type="file" id="incPhoto" accept=".jpg,.jpeg,image/jpeg" multiple style="padding:7px 10px;">
-                    <small style="display:block; margin-top:5px; color:#666;">Maximum 3 photos • JPG/JPEG only • 2 MB per photo</small>
-                    <div id="photoPreviewContainer" style="margin-top:10px;"></div>
-                </div>
-                <div class="inc-form-group">
-                    <label>Doctor / Nursing Staff Informed?</label>
-                    <select id="incDoctorInformed" onchange="toggleInformedName()">
-                        <option value="No">No</option>
-                        <option value="Yes">Yes</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modalGrid full" id="divInformedName" style="display:none; margin-top:-5px; margin-bottom:15px;">
-                <div class="inc-form-group">
-                    <label>Name & Designation of Informed Staff <span style="color:red;">*</span></label>
-                    <input type="text" id="incInformedName" placeholder="e.g. Dr. Ramesh (RMO) or Sister Sunita (Incharge)">
-                </div>
-            </div>
-        </div>
-        <div class="modalFooter">
-            <button class="btn-cancel" onclick="document.getElementById('incidentModal').style.display='none'">Cancel</button>
-            <button class="btn-submit-inc" onclick="submitIncident()">Submit Final Report</button>
-        </div>
-    </div>
-</div> 
+</body>
+</html>
