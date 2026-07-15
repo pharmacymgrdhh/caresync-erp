@@ -1199,6 +1199,14 @@
                                 <div class="module-title">Day Book & Shift Handover</div>
                                 <p style="font-size:12px; color:#64748b; margin-top:8px;">Close shift & reconcile cash with denominations.</p>
                             </div>
+                            <!-- 🔴 Credit Settlement Button -->
+                            <div class="module-card" onclick="openCreditSettlementModal()">
+                                <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);">
+                                    <span class="material-symbols-outlined" style="color:#4f46e5; font-size: 32px;">payments</span>
+                                </div>
+                                <div class="module-title">Credit Settlement</div>
+                                <p style="font-size:12px; color:#64748b; margin-top:8px;">Receive pending payments for IPD/OPD Credit Bills.</p>
+                            </div>
                             
                             <!-- Future Modules (Placeholders) -->
                             <div class="module-card" style="opacity: 0.6; cursor: not-allowed;">
@@ -1245,6 +1253,7 @@
                         <div style="padding: 20px;">
                             <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
                                 <tr><td style="padding: 12px 0; color: #475569; font-weight: 500;">Cash Sale (+)</td><td style="text-align: right; font-weight: bold; color: #15803d;">₹ <span id="acc_cashSales">0.00</span></td></tr>
+                                <tr><td style="padding: 12px 0; color: #475569; font-weight: 500;">Credit Collection (+)</td><td style="text-align: right; font-weight: bold; color: #15803d;">₹ <span id="acc_creditCollection">0.00</span></td></tr>
                                 <tr><td style="padding: 12px 0; border-bottom: 1px dashed #cbd5e1; color: #475569; font-weight: 500;">Cash Return (-)</td><td style="text-align: right; border-bottom: 1px dashed #cbd5e1; font-weight: bold; color: #b91c1c;">₹ <span id="acc_cashReturns">0.00</span></td></tr>
                                 <tr><td style="padding: 15px 0; font-size: 18px; font-weight: bold; color: #1e293b;">Expected Cash</td><td style="text-align: right; font-size: 22px; font-weight: 900; color: #1d4ed8;">₹ <span id="acc_expectedCash">0.00</span></td></tr>
                             </table>
@@ -1860,14 +1869,38 @@
             </div>
             <div style="padding: 20px; display: flex; flex-direction: column; gap: 15px;">
                 <div id="popupPaymentSection">
+                    
+                    <!-- 🔴 Net Payable Amount Display -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #e8f5e9; padding: 10px; border-radius: 4px; border: 1px solid #a5d6a7; margin-bottom: 15px;">
+                        <span style="font-weight: bold; color: #1b5e20;">Net Payable:</span>
+                        <span style="font-size: 20px; font-weight: 900; color: #1b5e20;">₹ <span id="modalNetPayable">0.00</span></span>
+                    </div>
+
                     <label style="font-weight: bold; color: #2c598f; font-size: 14px;">Payment Mode <span style="color:red">*</span></label>
                     <select id="modalPaymentMode" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; margin-top: 5px; outline: none;" onchange="validateSaveModal()">
                         <option value="">-- Select Payment Mode --</option>
                         <option value="Cash">💵 Cash</option>
                         <option value="Online">💳 Online / Card</option>
+                        <option value="Split">🔀 Split Payment (Cash + Online)</option>
                     </select>
+
+                    <!-- 🔴 Split Payment Inputs (Hidden by default) -->
+                    <div id="splitPaymentDiv" style="display: none; margin-top: 15px; background: #f8fafc; padding: 15px; border: 1px solid #cbd5e1; border-radius: 6px;">
+                        <div style="display: flex; gap: 10px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 12px; font-weight: bold; color: #15803d;">💵 Cash (₹)</label>
+                                <input type="number" id="splitCashAmt" placeholder="0" min="0" oninput="autoCalcSplit('cash')" style="width: 100%; padding: 8px; border: 1px solid #bbf7d0; border-radius: 4px; font-weight: bold; outline: none; box-sizing: border-box; text-align: center;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 12px; font-weight: bold; color: #1d4ed8;">💳 Online (₹)</label>
+                                <input type="number" id="splitOnlineAmt" placeholder="0" min="0" oninput="autoCalcSplit('online')" style="width: 100%; padding: 8px; border: 1px solid #bfdbfe; border-radius: 4px; font-weight: bold; outline: none; box-sizing: border-box; text-align: center;">
+                            </div>
+                        </div>
+                        <div id="splitError" style="color: #e74c3c; font-size: 11px; font-weight: bold; margin-top: 8px; text-align: center; display: none;">Total does not match Net Payable!</div>
+                    </div>
+
                     <div id="txnIdDiv" style="display: none; margin-top: 15px;">
-                        <label style="font-weight: bold; color: #2c598f; font-size: 14px;">Transaction ID <span style="color:red">*</span></label>
+                        <label style="font-weight: bold; color: #2c598f; font-size: 14px;">Transaction ID / UTR <span style="color:red">*</span></label>
                         <input type="text" id="modalTxnId" placeholder="Enter Txn ID / UTR" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; margin-top: 5px; outline: none;" oninput="validateSaveModal()">
                     </div>
                 </div>
@@ -1955,6 +1988,87 @@
                 <button class="btn-dispatch" style="font-size: 15px; padding: 10px 25px; margin: 0; background-color: #27ae60;" onclick="saveVendor()">Save Vendor</button>
             </div>
             
+        </div>
+    </div>
+    <!-- 🔴 CREDIT SETTLEMENT MODAL -->
+    <div id="creditSettlementModal" class="modalOverlay" style="display:none; z-index: 20000;">
+        <div class="modalBox" style="width: 800px; max-width: 95%;">
+            <div class="modalHeader" style="background: #4f46e5; color: white;">
+                <h3 style="color: white; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">payments</span> Credit Bill Settlement
+                </h3>
+                <button class="modalCloseBtn" onclick="closeCreditSettlementModal()" style="color: white; background: transparent;">✕</button>
+            </div>
+            
+            <div class="modalBody">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <input type="text" id="cs_searchPatient" placeholder="Search by Patient Name or MRN..." style="flex: 1; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 14px; outline: none;">
+                    <button class="btn-dispatch" style="background-color: #4f46e5; margin: 0; padding: 10px 25px;" onclick="searchCreditBills()">Search Due Bills</button>
+                </div>
+                
+                <div class="table-scroll-container" style="max-height: 200px; border: 1px solid #e2e8f0; border-radius: 6px;">
+                    <table class="p-table" style="margin-top: 0; font-size: 13px; border: none;">
+                        <thead style="background: #f8fafc;">
+                            <tr>
+                                <th>Date</th>
+                                <th>Particulars (Bill / Receipt)</th>
+                                <th>Patient Name</th>
+                                <th style="text-align:right; color:#e74c3c;">Billed (₹)</th>
+                                <th style="text-align:right; color:#27ae60;">Paid (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cs_billsTableBody">
+                            <tr><td colspan="6" style="text-align:center; color:#7f8c8d; padding: 20px;">Search patient to view pending bills</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="cs_paymentSection" style="display:none; margin-top: 20px; padding: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 12px; margin-bottom: 15px;">
+                        <h4 style="margin: 0; color: #1e293b;">Payment Details</h4>
+                        <div style="text-align: right;">
+                             <div style="font-size: 13px; color: #64748b; font-weight: bold;">Total Billed: ₹<span id="cs_lblBilled">0.00</span> &nbsp;|&nbsp; Total Paid: ₹<span id="cs_lblPaid">0.00</span></div>
+                             <div style="font-size: 18px; font-weight: bold; color: #e11d48; margin-top: 4px;">Net Due: ₹ <span id="cs_totalDue">0.00</span></div>
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label style="font-size: 13px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Paying Now (₹) <span style="color:red">*</span></label>
+                            <input type="number" id="cs_payingAmount" oninput="validateCsPayment()" style="width: 100%; padding: 10px; border: 2px solid #27ae60; border-radius: 4px; font-size: 18px; font-weight: bold; color: #15803d; text-align: center; outline: none; box-sizing: border-box;" min="1">
+                        </div>
+                        <div>
+                            <label style="font-size: 13px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Payment Mode <span style="color:red">*</span></label>
+                            <select id="cs_paymentMode" onchange="handleCsPaymentMode()" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-weight: bold; color: #2c598f; outline: none; box-sizing: border-box;">
+                                <option value="Cash">💵 Cash</option>
+                                <option value="Online">💳 Online / Card</option>
+                                <option value="Split">🔀 Split Payment</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 13px; font-weight: bold; color: #475569; display: block; margin-bottom: 5px;">Txn ID / Remark</label>
+                            <input type="text" id="cs_txnId" placeholder="If Online or Split" style="width: 100%; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; outline: none; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    
+                    <!-- Split inputs -->
+                    <div id="cs_splitDiv" style="display:none; margin-top: 15px; grid-template-columns: 1fr 1fr; gap: 15px; background: #fff; padding: 15px; border-radius: 6px; border: 1px solid #cbd5e1;">
+                        <div><label style="font-size: 12px; font-weight: bold; color: #15803d; display: block; margin-bottom: 5px;">💵 Cash Amount (₹)</label><input type="number" id="cs_splitCash" oninput="autoCalcCsSplit('cash')" style="width: 100%; padding: 8px; border: 1px solid #bbf7d0; border-radius: 4px; font-weight: bold; text-align: center; outline: none; box-sizing: border-box;"></div>
+                        <div><label style="font-size: 12px; font-weight: bold; color: #1d4ed8; display: block; margin-bottom: 5px;">💳 Online Amount (₹)</label><input type="number" id="cs_splitOnline" oninput="autoCalcCsSplit('online')" style="width: 100%; padding: 8px; border: 1px solid #bfdbfe; border-radius: 4px; font-weight: bold; text-align: center; outline: none; box-sizing: border-box;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modalFooter" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-cancel" onclick="closeCreditSettlementModal()">Cancel</button>
+                    <!-- 🔴 नवीन Print Ledger बटण -->
+                    <button onclick="printPatientLedger()" id="cs_btnPrintLedger" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: 0.3s;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">print</span> Print Ledger
+                    </button>
+                </div>
+                <button class="btn-submit-inc" id="cs_btnSubmit" onclick="submitCreditSettlement()" style="background: #27ae60;" disabled>Receive Payment & Print ➔</button>
+            </div>
         </div>
     </div>
 
@@ -3161,6 +3275,7 @@
         let txnDiv = document.getElementById('txnIdDiv');
         let txnId = document.getElementById('modalTxnId');
         
+        document.getElementById('modalNetPayable').innerText = document.getElementById('saleTotalAmount').innerText; // 🔴 NEW
         pMode.value = ""; txnId.value = ""; txnDiv.style.display = 'none';
         pSection.style.display = isCredit ? 'none' : 'block';
         
@@ -3176,6 +3291,24 @@
         document.getElementById('posBillDiscPct').focus();
     }
 
+    // 🔴 NEW: Split Payment Auto Calculator
+    function autoCalcSplit(changedField) {
+        let total = parseFloat(document.getElementById('modalNetPayable').innerText) || 0;
+        let cashInp = document.getElementById('splitCashAmt');
+        let onlineInp = document.getElementById('splitOnlineAmt');
+        
+        if(changedField === 'cash') {
+            let cashVal = parseFloat(cashInp.value) || 0;
+            if(cashVal <= total) { onlineInp.value = (total - cashVal).toFixed(2); } 
+            else { onlineInp.value = 0; }
+        } else if(changedField === 'online') {
+            let onlineVal = parseFloat(onlineInp.value) || 0;
+            if(onlineVal <= total) { cashInp.value = (total - onlineVal).toFixed(2); } 
+            else { cashInp.value = 0; }
+        }
+        validateSaveModal();
+    }
+
     function validateSaveModal() {
         let billType = document.getElementById('billingType').value;
         let isCredit = billType.includes("Credit");
@@ -3183,13 +3316,32 @@
         let txnId = document.getElementById('modalTxnId').value.trim();
         let btnSave = document.getElementById('modalBtnSave');
         
-        document.getElementById('txnIdDiv').style.display = (pMode === 'Online') ? 'block' : 'none';
+        let txnDiv = document.getElementById('txnIdDiv');
+        let splitDiv = document.getElementById('splitPaymentDiv');
+        
+        // 🔴 Split किंवा Online निवडल्यास Txn ID बॉक्स दिसेल
+        txnDiv.style.display = (pMode === 'Online' || pMode === 'Split') ? 'block' : 'none';
+        splitDiv.style.display = (pMode === 'Split') ? 'block' : 'none';
         
         let isValid = false;
-        if (isCredit) { isValid = true; } 
-        else {
+        if (isCredit) { 
+            isValid = true; 
+        } else {
             if (pMode === 'Cash') isValid = true;
             else if (pMode === 'Online' && txnId !== '') isValid = true;
+            else if (pMode === 'Split') {
+                let total = parseFloat(document.getElementById('modalNetPayable').innerText) || 0;
+                let cash = parseFloat(document.getElementById('splitCashAmt').value) || 0;
+                let online = parseFloat(document.getElementById('splitOnlineAmt').value) || 0;
+                
+                // Cash + Online ची बेरीज टोटल बिलाएवढी असली पाहिजे
+                if (Math.abs(total - (cash + online)) < 0.01 && txnId !== '' && cash > 0 && online > 0) {
+                    isValid = true;
+                    document.getElementById('splitError').style.display = 'none';
+                } else {
+                    document.getElementById('splitError').style.display = 'block';
+                }
+            }
         }
         
         if (isValid) {
@@ -3230,7 +3382,17 @@
         if (isCash) { 
             let modalMode = document.getElementById('modalPaymentMode').value;
             let txnId = document.getElementById('modalTxnId').value.trim();
-            pMode = (modalMode === 'Online') ? `Online (Txn: ${txnId})` : modalMode; 
+            
+            if (modalMode === 'Online') {
+                pMode = `Online (Txn: ${txnId})`; 
+            } else if (modalMode === 'Split') {
+                let cashAmt = parseFloat(document.getElementById('splitCashAmt').value).toFixed(2);
+                let onlineAmt = parseFloat(document.getElementById('splitOnlineAmt').value).toFixed(2);
+                // 🔴 Google Sheet मध्ये सेव्ह होताना 'Split' ची सविस्तर माहिती दिसेल
+                pMode = `Split [Cash: ₹${cashAmt}, Online: ₹${onlineAmt} (Txn: ${txnId})]`;
+            } else {
+                pMode = modalMode; // "Cash"
+            }
         }
         
         let patient = document.getElementById('lblPatient').value.trim(); 
@@ -6151,17 +6313,42 @@
             document.getElementById('shiftSummaryContent').style.display = 'block';
             
             if(data.success) {
-                document.getElementById('acc_cashSales').innerText = parseFloat(data.cashSales).toFixed(2);
-                document.getElementById('acc_cashReturns').innerText = parseFloat(data.cashReturns).toFixed(2);
+                let cSale = parseFloat(data.cashSale) || 0;
+                let cCol = parseFloat(data.creditCollection) || 0;
+                let cRet = parseFloat(data.cashReturn) || 0;
+                let upi = parseFloat(data.upiSale) || 0;
                 
-                document.getElementById('acc_onlineSales').innerText = parseFloat(data.onlineSales).toFixed(2);
-                document.getElementById('acc_onlineSalesTotal').innerText = parseFloat(data.onlineSales).toFixed(2);
+                document.getElementById('acc_cashSales').innerText = cSale.toFixed(2);
+                document.getElementById('acc_creditCollection').innerText = cCol.toFixed(2);
+                document.getElementById('acc_cashReturns').innerText = cRet.toFixed(2);
+                document.getElementById('acc_onlineSales').innerText = upi.toFixed(2);
+                document.getElementById('acc_onlineSalesTotal').innerText = upi.toFixed(2);
                 
-                shiftExpectedCash = parseFloat(data.expectedCash);
+                shiftExpectedCash = cSale + cCol - cRet;
                 document.getElementById('acc_expectedCash').innerText = shiftExpectedCash.toFixed(2);
                 
                 document.getElementById('acc_remarks').value = '';
                 calculateCashDifference();
+
+                // 🔴 NEW: Dropdown मध्ये नावे भरणे (तुमच्या अचूक ID नुसार)
+                let handoverDropdown = document.getElementById('acc_handoverTo'); 
+                
+                if (handoverDropdown && data.users) {
+                    // जुने डिफॉल्ट ऑप्शन्स तसेच ठेवले आहेत
+                    handoverDropdown.innerHTML = `
+                        <option value="">-- Select Staff --</option>
+                        <option value="Admin / Accounts">Admin / Accounts Dept</option>
+                    `;
+                    
+                    // गुगल शीटमधून आलेली नावे ऍड करणे
+                    data.users.forEach(uName => {
+                        // स्वतःचे नाव स्वतःला हँडओव्हर करण्यासाठी नको म्हणून
+                        if (uName !== loggedInName) { 
+                            handoverDropdown.innerHTML += `<option value="${uName}">${uName}</option>`;
+                        }
+                    });
+                }
+
             } else {
                 alert("Error fetching shift data.");
             }
@@ -6984,6 +7171,280 @@
         printWindow.focus();
         setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
     }
+    // ==========================================
+    // 🔴 CREDIT BILL SETTLEMENT (LEDGER SYSTEM)
+    // ==========================================
+    let currentLedgerBills = [];
+    let currentLedgerReceipts = [];
+
+    function openCreditSettlementModal() {
+        document.getElementById('creditSettlementModal').style.display = 'flex';
+        document.getElementById('cs_searchPatient').value = '';
+        document.getElementById('cs_billsTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center; color:#7f8c8d; padding:20px;">Search patient to view pending bills</td></tr>';
+        document.getElementById('cs_paymentSection').style.display = 'none';
+        document.getElementById('cs_payingAmount').value = '';
+    }
+
+    function closeCreditSettlementModal() {
+        document.getElementById('creditSettlementModal').style.display = 'none';
+    }
+
+    function searchCreditBills() {
+        let query = document.getElementById('cs_searchPatient').value.trim();
+        if(!query) return alert("Please enter Patient Name or MRN to search.");
+        
+        let btn = document.querySelector('#creditSettlementModal .btn-dispatch');
+        let origTxt = btn.innerText;
+        btn.innerText = "Searching..."; btn.disabled = true;
+        
+        fetch(SCRIPT_URL + `?action=getPendingCreditBills&unitName=${encodeURIComponent(loggedInUnit)}&query=${encodeURIComponent(query)}&t=${new Date().getTime()}`)
+        .then(res => res.json())
+        .then(data => {
+            btn.innerText = origTxt; btn.disabled = false;
+            let tbody = document.getElementById('cs_billsTableBody');
+            
+            if(data.success && data.bills.length > 0) {
+                currentLedgerBills = data.bills;
+                currentLedgerReceipts = data.receipts || [];
+                renderCreditBillsTable();
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#e74c3c; font-weight:bold; padding:20px;">No pending credit bills found for this patient.</td></tr>';
+                document.getElementById('cs_paymentSection').style.display = 'none';
+            }
+        }).catch(err => {
+            btn.innerText = origTxt; btn.disabled = false;
+            alert("System Error fetching pending bills.");
+        });
+    }
+
+    function renderCreditBillsTable() {
+        let tbody = document.getElementById('cs_billsTableBody');
+        tbody.innerHTML = '';
+        let totalBilled = 0;
+        let totalPaid = 0;
+        
+        // 🔴 1. आधी सर्व Bills दाखवणे (Billed Amount)
+        currentLedgerBills.forEach(b => {
+            totalBilled += b.amount;
+            let rawDate = (String(b.refNo).includes("202") || String(b.refNo).includes("T")) ? b.refNo : b.date;
+            let rawBillNo = String(b.refNo).includes("BILL") ? b.refNo : b.date;
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td style="color:#64748b; font-size:13px;">${formatCDate(rawDate)}</td>
+                    <td style="font-weight:bold; color:#e74c3c;">${rawBillNo}</td>
+                    <td>${b.patientName}</td>
+                    <td style="text-align:right; font-weight:bold; color:#e74c3c;">${b.amount.toFixed(2)}</td>
+                    <td style="text-align:right; color:#94a3b8;">-</td>
+                </tr>
+            `;
+        });
+
+        // 🔴 2. मग सर्व जुन्या Receipts दाखवणे (Paid Amount)
+        currentLedgerReceipts.forEach(r => {
+            totalPaid += r.amount;
+            tbody.innerHTML += `
+                <tr style="background-color: #f0fdf4;">
+                    <td style="color:#64748b; font-size:13px;">${formatCDate(r.date)}</td>
+                    <td style="font-weight:bold; color:#27ae60;">${r.refNo} <span style="font-size:10px; color:#64748b;">(Receipt)</span></td>
+                    <td>${r.patientName}</td>
+                    <td style="text-align:right; color:#94a3b8;">-</td>
+                    <td style="text-align:right; font-weight:bold; color:#27ae60;">${r.amount.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        
+        // 🔴 3. Net Due Calculation
+        let netDue = totalBilled - totalPaid;
+        if (netDue < 0) netDue = 0; 
+        
+        document.getElementById('cs_paymentSection').style.display = 'block';
+        
+        // UI अपडेट करणे
+        document.getElementById('cs_lblBilled').innerText = totalBilled.toFixed(2);
+        document.getElementById('cs_lblPaid').innerText = totalPaid.toFixed(2);
+        document.getElementById('cs_totalDue').innerText = netDue.toFixed(2);
+        
+        // जर पूर्ण पैसे आले असतील तर Payment बॉक्स Disable करणे
+        let payingInp = document.getElementById('cs_payingAmount');
+        if(netDue <= 0) {
+            payingInp.value = 0;
+            payingInp.disabled = true;
+            document.getElementById('cs_paymentMode').disabled = true;
+            document.getElementById('cs_btnSubmit').disabled = true;
+        } else {
+            payingInp.value = netDue.toFixed(2);
+            payingInp.disabled = false;
+            document.getElementById('cs_paymentMode').disabled = false;
+        }
+        
+        document.getElementById('cs_paymentMode').value = "Cash";
+        handleCsPaymentMode(); 
+    }
+
+    function handleCsPaymentMode() {
+        let pMode = document.getElementById('cs_paymentMode').value;
+        let splitDiv = document.getElementById('cs_splitDiv');
+        let splitCash = document.getElementById('cs_splitCash');
+        let splitOnline = document.getElementById('cs_splitOnline');
+        
+        if (pMode === 'Split') {
+            splitDiv.style.display = 'grid';
+            let payingNow = parseFloat(document.getElementById('cs_payingAmount').value) || 0;
+            splitCash.value = payingNow;
+            splitOnline.value = 0;
+        } else {
+            splitDiv.style.display = 'none';
+        }
+        validateCsPayment();
+    }
+
+    function autoCalcCsSplit(source) {
+        let total = parseFloat(document.getElementById('cs_payingAmount').value) || 0;
+        let cashInp = document.getElementById('cs_splitCash');
+        let onlineInp = document.getElementById('cs_splitOnline');
+        
+        if(source === 'cash') {
+            let cashVal = parseFloat(cashInp.value) || 0;
+            onlineInp.value = cashVal <= total ? (total - cashVal).toFixed(2) : 0;
+        } else {
+            let onlineVal = parseFloat(onlineInp.value) || 0;
+            cashInp.value = onlineVal <= total ? (total - onlineVal).toFixed(2) : 0;
+        }
+        validateCsPayment();
+    }
+
+    function validateCsPayment() {
+        let totalDue = parseFloat(document.getElementById('cs_totalDue').innerText) || 0;
+        let payingNow = parseFloat(document.getElementById('cs_payingAmount').value) || 0;
+        let pMode = document.getElementById('cs_paymentMode').value;
+        let btn = document.getElementById('cs_btnSubmit');
+        
+        let isValid = false;
+        
+        if(payingNow > 0 && payingNow <= totalDue) {
+            if(pMode === 'Cash' || pMode === 'Online') {
+                isValid = true;
+            } else if (pMode === 'Split') {
+                let cash = parseFloat(document.getElementById('cs_splitCash').value) || 0;
+                let online = parseFloat(document.getElementById('cs_splitOnline').value) || 0;
+                if(Math.abs(payingNow - (cash + online)) < 0.01 && cash > 0 && online > 0) {
+                    isValid = true;
+                }
+            }
+        }
+        
+        btn.disabled = !isValid;
+        btn.style.opacity = isValid ? '1' : '0.5';
+    }
+
+    async function submitCreditSettlement() {
+        if(!(await verifyUserPasskey("Credit Bill Settlement"))) return;
+        
+        let payingNow = parseFloat(document.getElementById('cs_payingAmount').value);
+        let pMode = document.getElementById('cs_paymentMode').value;
+        let txnId = document.getElementById('cs_txnId').value.trim();
+        
+        let finalMode = pMode;
+        if(pMode === 'Online') finalMode = `Online (Txn: ${txnId})`;
+        else if (pMode === 'Split') {
+            let c = document.getElementById('cs_splitCash').value;
+            let o = document.getElementById('cs_splitOnline').value;
+            finalMode = `Split [Cash: ₹${c}, Online: ₹${o} (Txn: ${txnId})]`;
+        }
+        
+        let btn = document.getElementById('cs_btnSubmit');
+        let origTxt = btn.innerText;
+        btn.innerText = "Processing..."; btn.disabled = true;
+        
+        // 🔴 FIX: Loader जर फाईलमध्ये नसेल, तरी एरर येणार नाही (Safe Check)
+        let loader = document.getElementById('globalLoader');
+        if (loader) loader.style.display = 'flex';
+        
+        let payload = {
+            action: "processCreditSettlement",
+            unitName: loggedInUnit,
+            patientName: currentLedgerBills[0]?.patientName || "Unknown",
+            paidAmount: payingNow,
+            paymentMode: finalMode,
+            bills: currentLedgerBills.map(b => b.refNo),
+            operatorName: loggedInName
+        };
+
+        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(r => r.json()).then(res => {
+            if(res.success) {
+                showToast("Payment Received! Receipt No: " + res.receiptNo, "success");
+                closeCreditSettlementModal();
+                alert(`✅ Payment Processed Successfully!\n\nReceipt No: ${res.receiptNo}\nAmount Paid: ₹${payingNow}\n\n(This will automatically reflect in your Shift Handover)`);
+            } else { alert("Failed: " + res.message); }
+        }).catch(err => alert("Connection error.")).finally(() => { if(btn) { btn.innerText = origTxt; btn.disabled = false; } });
+    }
+
+    // 🔴 ⬇️ याच्या बरोबर खाली इथे तो नवीन कोड पेस्ट करा ⬇️ 🔴
+    // ==========================================
+    // 🔴 PATIENT LEDGER PRINT FORMAT (100% Safe Code)
+    // ==========================================
+    function printPatientLedger() {
+        if (!currentLedgerBills.length && !currentLedgerReceipts.length) { 
+            return alert("No ledger data found to print!"); 
+        }
+
+        let pName = currentLedgerBills[0]?.patientName || currentLedgerReceipts[0]?.patientName || "Unknown Patient";
+        pName = pName.toUpperCase();
+        let printDate = new Date().toLocaleString('en-IN', {day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'});
+        
+        let totalBilled = document.getElementById('cs_lblBilled').innerText;
+        let totalPaid = document.getElementById('cs_lblPaid').innerText;
+        let netDue = document.getElementById('cs_totalDue').innerText;
+
+        let tableRows = "";
+        currentLedgerBills.forEach(b => {
+            let rawDate = (String(b.refNo).includes("202") || String(b.refNo).includes("T")) ? b.refNo : b.date;
+            let rawBillNo = String(b.refNo).includes("BILL") ? b.refNo : b.date;
+            tableRows += `<tr><td>${formatCDate(rawDate)}</td><td><b>${rawBillNo}</b> (Pharmacy Bill)</td><td style="text-align:right;">${b.amount.toFixed(2)}</td><td style="text-align:right;">-</td></tr>`;
+        });
+        
+        currentLedgerReceipts.forEach(r => {
+            tableRows += `<tr><td>${formatCDate(r.date)}</td><td><b>${r.refNo}</b> (Payment Received)</td><td style="text-align:right;">-</td><td style="text-align:right;">${r.amount.toFixed(2)}</td></tr>`;
+        });
+
+        // 🔴 Browser Parser ला कन्फ्युज होऊ नये म्हणून सुरक्षित HTML String 
+        let printHTML = '<!DOCTYPE html><html><head><title>Patient Ledger - ' + pName + '</title>' +
+            '<style>' +
+            'body { font-family: "Segoe UI", Arial, sans-serif; padding: 20px; color: #1e293b; max-width: 800px; margin: auto; }' +
+            '.header { text-align: center; border-bottom: 2px solid #1e293b; padding-bottom: 15px; margin-bottom: 20px; }' +
+            '.header h2 { margin: 0; font-size: 26px; font-weight: bold; text-transform: uppercase; }' +
+            '.header p { margin: 5px 0 0 0; font-size: 14px; color: #475569; letter-spacing: 1px; }' +
+            '.info-section { display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px; background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px solid #e2e8f0; }' +
+            'table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 13px; }' +
+            'th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; }' +
+            'th { background-color: #f1f5f9; font-weight: bold; color: #334155; }' +
+            '.totals-box { width: 300px; float: right; border: 1px solid #cbd5e1; border-radius: 6px; padding: 15px; background: #f8fafc; }' +
+            '.totals-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }' +
+            '.net-due { font-size: 18px; font-weight: bold; color: #000; margin-top: 10px; border-top: 2px solid #cbd5e1; padding-top: 10px; }' +
+            '.footer { clear: both; margin-top: 50px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px dashed #cbd5e1; padding-top: 15px; }' +
+            '@media print { body { padding: 0; -webkit-print-color-adjust: exact; } .totals-box { border: 1px solid #000; } th, td { border: 1px solid #000; } }' +
+            '</style></head><body>' +
+            '<div class="header"><h2>' + loggedInUnit + '</h2><p>PATIENT LEDGER STATEMENT</p></div>' +
+            '<div class="info-section"><div><strong>Patient Name:</strong> ' + pName + '</div><div><strong>Statement Date:</strong> ' + printDate + '</div></div>' +
+            '<table><thead><tr><th>Date</th><th>Particulars (Ref No)</th><th style="text-align:right;">Billed (Dr.) ₹</th><th style="text-align:right;">Paid (Cr.) ₹</th></tr></thead><tbody>' + tableRows + '</tbody></table>' +
+            '<div class="totals-box"><div class="totals-row"><span>Total Billed:</span> <span>₹ ' + totalBilled + '</span></div><div class="totals-row"><span>Total Paid:</span> <span>₹ ' + totalPaid + '</span></div><div class="totals-row net-due"><span>Net Due Balance:</span> <span>₹ ' + netDue + '</span></div></div>' +
+            '<div class="footer"><p>Generated by CareSync Pharmacy Management System • Authorized by ' + loggedInName + '</p><p style="margin-top:5px; font-style:italic;">This is a computer-generated statement and does not require a physical signature.</p></div>' +
+            '</body></html>';
+
+        let printWindow = window.open('', '_blank', 'height=600,width=800');
+        if (printWindow) {
+            printWindow.document.open();
+            printWindow.document.write(printHTML);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+        } else {
+            alert("Please allow pop-ups in your browser to print the ledger.");
+        }
+    }
+    
 </script>
 </body>
 </html>
