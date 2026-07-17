@@ -7635,7 +7635,7 @@
                 }
                 
                 tbody.innerHTML += `<tr>
-                    <td style="color: #64748b; font-size: 12px;">${exp.date}</td>
+                    <td style="color: #64748b; font-size: 12px;">${formatCDate(exp.date)}</td>
                     <td><b>${exp.subCategory}</b><br><span style="font-size: 11px; color: #64748b;">${exp.remark}</span></td>
                     <td style="text-align: right; font-weight: bold; color: #b45309;">${parseFloat(exp.amount).toFixed(2)}</td>
                     <td style="text-align: center; color: #475569; font-size: 12px;">${exp.maker}</td>
