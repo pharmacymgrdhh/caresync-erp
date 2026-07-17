@@ -1176,9 +1176,16 @@
                 </section>
                 <section id="pharmacyView-masters" class="pharmacy-view">
                     <div class="module-shell">
-                        <h2>Masters</h2>
-                        <div style="display:flex;gap:10px;margin-top:15px;">
-                            <button class="small-action primary" onclick="openVendorMaster()">Vendor Master</button>
+                        <h2> Masters Dashboard</h2>
+                        <div style="display:flex;gap:15px;margin-top:15px;">
+                            <button class="small-action primary" style="background-color: #2c598f; border-color: #2c598f; padding: 10px 20px; font-size: 14px;" onclick="openVendorMaster()">
+                                 Vendor Master
+                            </button>
+                            
+                            <!-- 🔴 NEW: Product / Medicine Master Button -->
+                            <button class="small-action primary" style="background-color: #27ae60; border-color: #27ae60; padding: 10px 20px; font-size: 14px;" onclick="openMedicineMaster()">
+                                 Product / Medicine Master
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -2019,6 +2026,128 @@
                 <button class="btn-dispatch" style="font-size: 15px; padding: 10px 25px; margin: 0; background-color: #27ae60;" onclick="saveVendor()">Save Vendor</button>
             </div>
             
+        </div>
+    </div>
+    <!-- 🔴 ADVANCED MEDICINE MASTER MODAL (22 Columns) -->
+    <div id="medicineMasterModal" class="modalOverlay" style="display:none; z-index: 25000;">
+        <div class="modalBox" style="width: 1000px; max-width: 98%; padding: 0;">
+            <div class="modalHeader" style="background: #2c598f; color: white; padding: 15px 20px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">medication</span> Advanced Medicine & Product Master
+                </h3>
+                <button class="modalCloseBtn" onclick="closeMedicineMaster()" style="color: white; background: transparent; font-size: 20px;">✕</button>
+            </div>
+            
+            <div class="modalBody" style="background: #f8fafc; padding: 20px; max-height: 80vh; overflow-y: auto;">
+                
+                <!-- 🟢 SEARCH SECTION -->
+                <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="pmSearchInput" placeholder="🔍 Search by Product Code, Brand or Generic Name..." style="flex: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: bold; font-size: 14px;" onkeypress="if(event.key === 'Enter') searchAdvancedMedicines()">
+                        <button class="btn-dispatch" style="margin:0; background: #2c598f; padding: 0 25px;" onclick="searchAdvancedMedicines()">Search</button>
+                        <button class="small-action" style="margin:0; background: #f1f5f9; border-color: #cbd5e1; color: #475569;" onclick="clearMedicineForm()">+ New Product</button>
+                    </div>
+                    
+                    <div class="table-scroll-container" style="max-height: 200px; border: 1px solid #e2e8f0; margin-top: 15px;">
+                        <table class="erp-pro-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                            <thead style="background:#f1f5f9; position: sticky; top: 0;">
+                                <tr>
+                                    <th style="padding: 10px; text-align: left;">Code</th>
+                                    <th style="padding: 10px; text-align: left;">Brand Name</th>
+                                    <th style="padding: 10px; text-align: left;">Generic / Composition</th>
+                                    <th style="padding: 10px; text-align: center;">Pack (Conv)</th>
+                                    <th style="padding: 10px; text-align: center;">Status</th>
+                                    <th style="padding: 10px; text-align: center;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pmSearchResultBody">
+                                <tr><td colspan="6" style="text-align:center; padding: 20px; color: #94a3b8;">Search to view existing products</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 🟢 ADD / EDIT FORM SECTION -->
+                <div style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                    
+                    <h4 style="margin-top: 0; color: #2c598f; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px;">1. Basic Identity</h4>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div class="inc-form-group"><label>Product Code <span style="font-size:10px;color:#7f8c8d;">(Auto)</span></label><input type="text" id="pm_code" placeholder="Auto Gen" style="background:#f0f8fa; font-weight:bold; color:#e74c3c;"></div>
+                        <!-- 🔴 NEW: Barcode Scanner Field -->
+                        <div class="inc-form-group"><label>Company Barcode (Scan)</label><input type="text" id="pm_barcode" placeholder="Scan Barcode here..." style="font-weight:bold; color:#166534; border: 2px solid #bbf7d0; background:#f0fdf4;"></div>
+                        <div class="inc-form-group" style="grid-column: span 2;"><label>Brand Name <span style="color:red">*</span></label><input type="text" id="pm_brand" placeholder="e.g. DOLO 650 MG TAB"></div>
+                        <div class="inc-form-group"><label>Dosage Form</label>
+                            <select id="pm_dosage">
+                                <option value="TAB">Tablet (TAB)</option><option value="CAP">Capsule (CAP)</option><option value="SYP">Syrup (SYP)</option>
+                                <option value="INJ">Injection (INJ)</option><option value="OINT">Ointment (OINT)</option><option value="DROP">Drops (DROP)</option>
+                                <option value="SURG">Surgical (SURG)</option><option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div class="inc-form-group" style="grid-column: span 2;"><label>Generic Name</label><input type="text" id="pm_generic" placeholder="e.g. Paracetamol"></div>
+                        <div class="inc-form-group" style="grid-column: span 2;"><label>Medicine Name (Display Name)</label><input type="text" id="pm_medName" placeholder="Full name for billing display"></div>
+                        <div class="inc-form-group"><label>Strength</label><input type="text" id="pm_strength" placeholder="e.g. 650 MG"></div>
+                        <div class="inc-form-group"><label>Therapeutic Class</label><input type="text" id="pm_class" placeholder="e.g. Analgesic"></div>
+                    </div>
+
+                    <h4 style="margin-top: 0; color: #2c598f; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px;">2. Commercial & Tax</h4>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div class="inc-form-group"><label>Pack (Size) <span style="color:red">*</span></label><input type="text" id="pm_pack" placeholder="e.g. 1X10"></div>
+                        <div class="inc-form-group"><label>Conversion Factor <span style="color:red">*</span></label><input type="number" id="pm_conv" value="1" min="1" placeholder="e.g. 10"></div>
+                        <div class="inc-form-group"><label>HSN Code</label><input type="text" id="pm_hsn" placeholder="e.g. 3004"></div>
+                        <div class="inc-form-group"><label>GST % <span style="color:red">*</span></label>
+                            <select id="pm_gst">
+                                <option value="0">0%</option><option value="5">5%</option><option value="12" selected>12%</option><option value="18">18%</option><option value="28">28%</option>
+                            </select>
+                        </div>
+                        <div class="inc-form-group"><label>Max Discount %</label><input type="number" id="pm_disc" value="0" min="0"></div>
+                        <div class="inc-form-group" style="grid-column: span 1.5;"><label>Manufacturer (Mfg)</label><input type="text" id="pm_mfg" placeholder="Company Name"></div>
+                        <div class="inc-form-group" style="grid-column: span 1.5;"><label>Marketed By</label><input type="text" id="pm_market" placeholder="Marketing Company"></div>
+                    </div>
+
+                    <h4 style="margin-top: 0; color: #2c598f; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px;">3. Inventory Limits & Compliance</h4>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                        <div class="inc-form-group"><label>Location (Rack)</label><input type="text" id="pm_rack" placeholder="e.g. RACK-A1"></div>
+                        <div class="inc-form-group"><label>Drug Schedule</label>
+                            <select id="pm_schedule">
+                                <option value="Non-Scheduled">Non-Scheduled</option><option value="H">Schedule H</option><option value="H1">Schedule H1 (Rx)</option><option value="X">Schedule X (Rx)</option>
+                            </select>
+                        </div>
+                        <div class="inc-form-group"><label>Reorder Level (RO) <span style="color:red">*</span></label><input type="number" id="pm_ro" value="10" style="font-weight:bold; color:#8e44ad;"></div>
+                        <div class="inc-form-group"><label>Minimum Stock <span style="color:red">*</span></label><input type="number" id="pm_min" value="5" style="font-weight:bold; color:#e67e22;"></div>
+                        <div class="inc-form-group"><label>Maximum Stock <span style="color:red">*</span></label><input type="number" id="pm_max" value="50" style="font-weight:bold; color:#2980b9;"></div>
+                        <div class="inc-form-group"><label>Critical Category (VED)</label>
+                            <select id="pm_ved">
+                                <option value="Essential">Essential (E)</option><option value="Vital">Vital (V)</option><option value="Desirable">Desirable (D)</option>
+                            </select>
+                        </div>
+                        <div class="inc-form-group"><label>High Risk Drug?</label>
+                            <select id="pm_risk" style="color:#e74c3c; font-weight:bold;">
+                                <option value="No">No</option><option value="Yes">Yes ⚠️</option>
+                            </select>
+                        </div>
+                        <div class="inc-form-group"><label>Product Status</label>
+                            <select id="pm_status" style="color:#27ae60; font-weight:bold;">
+                                <option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Banned">Banned/Blocked</option>
+                            </select>
+                        </div>
+                        <!-- 🔴 NEW: LASA Drug Category -->
+                        <div class="inc-form-group"><label>LASA Drug Category</label>
+                            <select id="pm_lasa" style="font-weight:bold; outline:none;">
+                                <option value="None">None</option>
+                                <option value="Look-Alike" style="color:#15803d;">🟢 Look-Alike (Visual)</option>
+                                <option value="Sound-Alike" style="color:#b45309;">🟡 Sound-Alike (Phonetic)</option>
+                                <option value="Both" style="color:#b91c1c;">🔴 Both (LASA)</option>
+                            </select>
+                        </div>
+                    </div> <!-- ग्रिड इथे संपेल -->
+
+                    <div style="margin-top: 25px; text-align: right; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                        <button onclick="clearMedicineForm()" class="btn-cancel">Clear Form</button>
+                        <button id="btnSaveMaster" onclick="saveAdvancedMedicine()" class="btn-dispatch" style="background-color: #27ae60; padding: 10px 30px; font-size: 15px;">Save / Update Product ✓</button>
+                    </div>
+
+                </div>
+            </div>
         </div>
     </div>
     <!-- 🔴 CREDIT SETTLEMENT MODAL -->
@@ -2956,17 +3085,64 @@
     const p_medDropdown = document.getElementById('p_medDropdown'); 
     
     if(p_medInput) {
+        // 🔴 1. Scanner Optimized Keydown Listener
         p_medInput.addEventListener('keydown', function(e) {
-            let x = document.getElementById("p_medDropdown").getElementsByClassName("med-item"); if (!x || x.length === 0) return;
-            if (e.key === "ArrowDown") { p_currentFocus++; addActiveP(x); e.preventDefault();} else if (e.key === "ArrowUp") { p_currentFocus--; addActiveP(x); e.preventDefault();} else if (e.key === "Enter") { e.preventDefault(); if (p_currentFocus > -1) x[p_currentFocus].click(); }
+            let x = document.getElementById("p_medDropdown").getElementsByClassName("med-item"); 
+            if (!x || x.length === 0) return;
+            if (e.key === "ArrowDown") { p_currentFocus++; addActiveP(x); e.preventDefault();} 
+            else if (e.key === "ArrowUp") { p_currentFocus--; addActiveP(x); e.preventDefault();} 
+            else if (e.key === "Enter") { 
+                e.preventDefault(); 
+                
+                // 🔴 NEW: SUPERFAST SCANNER LISTENER
+                let scannedVal = p_medInput.value.trim().toUpperCase();
+                
+                // Exact Match (Product Code किंवा Barcode)
+                let exactMatch = globalMedDetails.find(m => String(m.code).toUpperCase() === scannedVal || String(m.barcode).toUpperCase() === scannedVal);
+                
+                if (exactMatch) {
+                    window.currentSelectedMed = exactMatch;
+                    p_medInput.value = exactMatch.name.split("|")[0].trim();
+                    p_medDropdown.style.display = 'none'; 
+                    
+                    let pHist = JSON.parse(localStorage.getItem('careSync_pharmaHistory')) || {};
+                    pHist[exactMatch.code] = (pHist[exactMatch.code] || 0) + 1;
+                    localStorage.setItem('careSync_pharmaHistory', JSON.stringify(pHist));
+                    
+                    let bSelect = document.getElementById('p_medBatch');
+                    bSelect.innerHTML = '<option value="">-- Select Batch (F4) --</option>';
+                    let availableBatches = globalBatches.filter(b => Number(b.code) === Number(exactMatch.code));
+                    availableBatches.forEach(b => { 
+                        let opt = document.createElement('option'); 
+                        opt.value = b.batchExp; 
+                        opt.innerText = `${b.batchExp} (S:${b.stock})`; 
+                        opt.setAttribute('data-mrp', b.mrp); 
+                        opt.setAttribute('data-stock', b.stock);
+                        bSelect.appendChild(opt); 
+                    });
+                    
+                    if(availableBatches.length === 1) {
+                        bSelect.selectedIndex = 1;
+                        document.getElementById('p_medQty').focus();
+                    } else {
+                        bSelect.focus();
+                    }
+                    return; 
+                }
+                
+                if (p_currentFocus > -1) {
+                    x[p_currentFocus].click(); 
+                }
+            }
         });
+
         function addActiveP(x) { for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active"); if (p_currentFocus >= x.length) p_currentFocus = 0; if (p_currentFocus < 0) p_currentFocus = (x.length - 1); x[p_currentFocus].classList.add("autocomplete-active"); x[p_currentFocus].scrollIntoView({ block: "nearest", behavior: "smooth" }); }
         
+        // 🔴 2. Input Listener (With LASA, Risk & Brand Name)
         p_medInput.addEventListener('input', function() {
             p_currentFocus = -1; let val = this.value.toUpperCase().replace(/-/g, ' ').trim(); p_medDropdown.innerHTML = ''; if(!val) { p_medDropdown.style.display = 'none'; return; }
             const aliases = { "IV": "I V", "INJ": "INJECTION", "TAB": "TABLET" }; let tokens = val.split(" ").map(w => aliases[w] ? aliases[w] : w).join(" ").split(" ");
             
-            // 🔴 १. सर्व मॅच होणारी औषधे शोधून एका तात्पुरत्या लिस्टमध्ये टाकणे
             let matchedItems = [];
             for (let i = 0; i < globalMedDetails.length; i++) {
                 let m = globalMedDetails[i]; 
@@ -2976,23 +3152,28 @@
                 }
             }
 
-            // 🔴 २. स्मार्ट लॉजिक: लोकल मेमरी (History) तपासून सर्वात जास्त वापरलेली औषधे वर आणणे (Sorting)
             let pHist = JSON.parse(localStorage.getItem('careSync_pharmaHistory')) || {};
             matchedItems.sort((a, b) => (pHist[b.code] || 0) - (pHist[a.code] || 0));
 
-            // 🔴 ३. लिस्ट बनवून ड्रॉपडाऊन मध्ये दाखवणे
             let count = 0;
             for (let i = 0; i < matchedItems.length; i++) {
                 let m = matchedItems[i];
                 let div = document.createElement('div'); div.className = "med-item"; 
-                div.innerHTML = `<div class="med-brand">${m.name.split("|")[0].trim()} <span style="font-size:11px; color:#4276b6;">[${m.code}]</span></div>` + (m.generic ? `<div class="med-comp" style="font-size:11px; color:#7f8c8d; margin-top:3px;">${m.generic}</div>` : "");
+                
+                let lasaTag = "";
+                if (m.lasa === "Look-Alike") lasaTag = `<span style="background:#dcfce7; color:#15803d; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:5px; border:1px solid #bbf7d0;">🟢 Look-Alike</span>`;
+                else if (m.lasa === "Sound-Alike") lasaTag = `<span style="background:#fef08a; color:#b45309; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:5px; border:1px solid #fde047;">🟡 Sound-Alike</span>`;
+                else if (m.lasa === "Both") lasaTag = `<span style="background:#fee2e2; color:#b91c1c; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:5px; border:1px solid #fecaca;">🔴 LASA Alert</span>`;
+                
+                let riskTag = (m.risk === "Yes") ? `<span style="background:#fee2e2; color:#b91c1c; font-size:10px; padding:2px 6px; border-radius:10px; margin-left:5px; font-weight:bold; border:1px solid #fecaca;">⚠️ High Risk</span>` : "";
+
+                div.innerHTML = `<div class="med-brand">${m.name.split("|")[0].trim()} <span style="font-size:11px; color:#4276b6;">[${m.code}]</span> ${lasaTag} ${riskTag}</div>` + (m.generic ? `<div class="med-comp" style="font-size:11px; color:#7f8c8d; margin-top:3px;">${m.generic}</div>` : "");
                 
                 div.addEventListener('click', function() { 
                     window.currentSelectedMed = m;
                     p_medInput.value = m.name.split("|")[0].trim();
                     p_medDropdown.style.display = 'none'; 
                     
-                    // 🔴 ४. औषध निवडल्यावर त्याची मेमरी (Count) १ ने वाढवणे
                     pHist[m.code] = (pHist[m.code] || 0) + 1;
                     localStorage.setItem('careSync_pharmaHistory', JSON.stringify(pHist));
                     
@@ -3004,7 +3185,7 @@
                         opt.value = b.batchExp; 
                         opt.innerText = `${b.batchExp} (S:${b.stock})`; 
                         opt.setAttribute('data-mrp', b.mrp); 
-			opt.setAttribute('data-stock', b.stock);
+                        opt.setAttribute('data-stock', b.stock);
                         bSelect.appendChild(opt); 
                     });
                     
@@ -7671,6 +7852,210 @@
                 alert("Failed to update status.");
             }
         });
+    }
+    // ==========================================
+    // 🔴 ADVANCED MEDICINE MASTER (22 COLUMNS)
+    // ==========================================
+    window.lastSearchedMedicines = [];
+
+    function openMedicineMaster() {
+        document.getElementById('medicineMasterModal').style.display = 'flex';
+        clearMedicineForm();
+        document.getElementById('pmSearchResultBody').innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color: #94a3b8;">Search to view products</td></tr>';
+        document.getElementById('pmSearchInput').value = '';
+    }
+
+    function closeMedicineMaster() { document.getElementById('medicineMasterModal').style.display = 'none'; }
+
+    function clearMedicineForm() {
+        let fields = ['pm_code','pm_brand','pm_generic','pm_medName','pm_strength','pm_class','pm_pack','pm_hsn','pm_mfg','pm_market','pm_rack'];
+        fields.forEach(id => document.getElementById(id).value = '');
+        
+        document.getElementById('pm_dosage').value = 'TAB';
+        document.getElementById('pm_conv').value = '1';
+        document.getElementById('pm_gst').value = '12';
+        document.getElementById('pm_disc').value = '0';
+        document.getElementById('pm_schedule').value = 'Non-Scheduled';
+        document.getElementById('pm_ro').value = '10';
+        document.getElementById('pm_min').value = '5';
+        document.getElementById('pm_max').value = '50';
+        document.getElementById('pm_ved').value = 'Essential';
+        document.getElementById('pm_risk').value = 'No';
+        document.getElementById('pm_status').value = 'Active';
+        document.getElementById('pm_lasa').value = 'None';
+        document.getElementById('pm_barcode').value = '';
+        
+        document.getElementById('pm_code').readOnly = false;
+        document.getElementById('btnSaveMaster').innerText = "Save New Product ✓";
+    }
+
+    function searchAdvancedMedicines() {
+        let keyword = document.getElementById('pmSearchInput').value.trim();
+        let tbody = document.getElementById('pmSearchResultBody');
+        if(!keyword) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #e74c3c;">Enter a keyword to search.</td></tr>'; return; }
+
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Searching Database... ⏳</td></tr>';
+        
+        fetch(SCRIPT_URL + "?action=searchMedicinesAdvanced&keyword=" + encodeURIComponent(keyword))
+        .then(r => r.json())
+        .then(res => {
+            if(res.success && res.data.length > 0) {
+                tbody.innerHTML = '';
+                window.lastSearchedMedicines = res.data; 
+                res.data.forEach(m => {
+                    let rxTag = ['H1', 'X'].includes(m.schedule) ? `<span class="rx-tag">Rx</span>` : '';
+                    let statusColor = m.status === 'Active' ? '#27ae60' : '#e74c3c';
+                    tbody.innerHTML += `<tr>
+                        <td style="font-weight:bold; color:#1e293b;">${m.code}</td>
+                        <td style="color:#2c598f; font-weight:500;">${m.brand} ${rxTag}</td>
+                        <td>${m.generic || '-'}</td>
+                        <td style="text-align:center;">${m.pack} (${m.conv})</td>
+                        <td style="text-align:center; color:${statusColor}; font-weight:bold;">${m.status}</td>
+                        <td style="text-align:center;">
+                            <button onclick="editAdvancedMedicine('${m.code}')" style="background:#f59e0b; color:white; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold;">Edit</button>
+                            <!-- 🔴 NEW: Print QR Button -->
+                            <button onclick="printQRSticker('${m.code}')" style="background:#3b82f6; color:white; border:none; padding:4px 12px; border-radius:4px; cursor:pointer; font-size:11px; font-weight:bold; margin-left:5px;">🖨️ QR</button>
+                        </td>
+                    </tr>`;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #e74c3c;">No products found matching "' + keyword + '".</td></tr>';
+            }
+        }).catch(err => { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: #e74c3c;">Connection Error.</td></tr>'; });
+    }
+
+    function editAdvancedMedicine(code) {
+        let m = window.lastSearchedMedicines.find(x => x.code === code);
+        if(!m) return;
+        
+        document.getElementById('pm_code').value = m.code; document.getElementById('pm_code').readOnly = true;
+        document.getElementById('pm_brand').value = m.brand;
+        document.getElementById('pm_generic').value = m.generic;
+        document.getElementById('pm_medName').value = m.medName;
+        document.getElementById('pm_strength').value = m.strength;
+        document.getElementById('pm_dosage').value = m.dosage;
+        document.getElementById('pm_pack').value = m.pack;
+        document.getElementById('pm_conv').value = m.conv;
+        document.getElementById('pm_rack').value = m.rack;
+        document.getElementById('pm_schedule').value = m.schedule;
+        document.getElementById('pm_class').value = m.tClass;
+        document.getElementById('pm_hsn').value = m.hsn;
+        document.getElementById('pm_gst').value = m.gst;
+        document.getElementById('pm_disc').value = m.discount;
+        document.getElementById('pm_mfg').value = m.mfg;
+        document.getElementById('pm_market').value = m.market;
+        document.getElementById('pm_ro').value = m.ro;
+        document.getElementById('pm_min').value = m.min;
+        document.getElementById('pm_max').value = m.max;
+        document.getElementById('pm_ved').value = m.ved;
+        document.getElementById('pm_status').value = m.status;
+        document.getElementById('pm_risk').value = m.risk;
+        document.getElementById('pm_lasa').value = m.lasa || 'None';
+        document.getElementById('pm_barcode').value = m.barcode || '';
+        
+        document.getElementById('btnSaveMaster').innerText = "Update Product ✓";
+    }
+
+    function saveAdvancedMedicine() {
+        let payload = {
+            action: "saveMedicineAdvanced",
+            brand: document.getElementById('pm_brand').value.trim().toUpperCase(),
+            generic: document.getElementById('pm_generic').value.trim().toUpperCase(),
+            medName: document.getElementById('pm_medName').value.trim().toUpperCase(),
+            strength: document.getElementById('pm_strength').value.trim().toUpperCase(),
+            dosage: document.getElementById('pm_dosage').value,
+            code: document.getElementById('pm_code').value.trim().toUpperCase(), // Auto if blank
+            pack: document.getElementById('pm_pack').value.trim().toUpperCase(),
+            conv: document.getElementById('pm_conv').value || 1,
+            rack: document.getElementById('pm_rack').value.trim().toUpperCase(),
+            schedule: document.getElementById('pm_schedule').value,
+            tClass: document.getElementById('pm_class').value.trim().toUpperCase(),
+            hsn: document.getElementById('pm_hsn').value.trim(),
+            gst: document.getElementById('pm_gst').value,
+            discount: document.getElementById('pm_disc').value || 0,
+            mfg: document.getElementById('pm_mfg').value.trim().toUpperCase(),
+            market: document.getElementById('pm_market').value.trim().toUpperCase(),
+            ro: document.getElementById('pm_ro').value || 0,
+            min: document.getElementById('pm_min').value || 0,
+            max: document.getElementById('pm_max').value || 0,
+            ved: document.getElementById('pm_ved').value,
+            status: document.getElementById('pm_status').value,
+            risk: document.getElementById('pm_risk').value,
+            lasa: document.getElementById('pm_lasa').value,
+            barcode: document.getElementById('pm_barcode').value.trim() // 🔴 नवीन लाईन
+        };
+
+        if(!payload.brand) return alert("Brand Name is mandatory!");
+        if(!payload.pack) return alert("Pack size is mandatory!");
+
+        let btn = document.getElementById('btnSaveMaster');
+        let origTxt = btn.innerText; btn.innerText = "Saving Data..."; btn.disabled = true;
+
+        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(r => r.json())
+        .then(res => {
+            btn.innerText = origTxt; btn.disabled = false;
+            if(res.success) {
+                showToast("Product Master Updated Successfully!", "success");
+                clearMedicineForm();
+                if(payload.code) searchAdvancedMedicines(); // Refresh if updated
+                fetchMasterData(); // 🔴 Update global variables immediately
+            } else { alert("Failed: " + res.message); }
+        }).catch(err => { btn.innerText = origTxt; btn.disabled = false; alert("Connection error."); });
+    }
+    // ==========================================
+    // 🔴 AUTO QR CODE GENERATOR & THERMAL PRINTER
+    // ==========================================
+    function printQRSticker(code) {
+        // औषधाची माहिती शोधून काढणे
+        let m = window.lastSearchedMedicines.find(x => x.code === code);
+        if(!m) { alert("Product not found!"); return; }
+        
+        // 🔴 Google / External API वापरून लाइव्ह QR जनरेट करणे
+        let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(m.code);
+        
+        // 🔴 Thermal Printer च्या साईझनुसार (50mm x 25mm) डिझाईन
+        let printWindow = window.open('', '_blank', 'width=400,height=300');
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Print QR Label</title>
+                <style>
+                    /* Thermal Printer Size: 50mm Width x 25mm Height */
+                    @page { size: 50mm 25mm; margin: 0; }
+                    body { 
+                        font-family: 'Arial', sans-serif; 
+                        margin: 0; 
+                        padding: 2mm; 
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: space-between; 
+                        width: 46mm; 
+                        height: 21mm; 
+                        background: white; 
+                        color: black;
+                        overflow: hidden;
+                    }
+                    .info { flex: 1; text-align: left; padding-right: 3px; overflow: hidden; }
+                    .brand { font-size: 10px; font-weight: bold; margin: 0 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #000; }
+                    .text { font-size: 8px; margin: 1px 0; color: #333; }
+                    .code { font-size: 10px; font-weight: bold; margin-top: 2px; color: #000; }
+                    .qr { width: 18mm; height: 18mm; }
+                </style>
+            </head>
+            <body>
+                <div class="info">
+                    <div class="brand">${m.brand}</div>
+                    <div class="text">Pack: ${m.pack}</div>
+                    <div class="code">[ ${m.code} ]</div>
+                    <div class="text" style="font-size:7px; margin-top:3px; border-top: 1px dashed #ccc; padding-top:2px;">CareSync ERP</div>
+                </div>
+                <!-- 🔴 QR लोड झाल्यावर आपोआप Print कमांड देईल -->
+                <img src="${qrUrl}" class="qr" onload="window.print(); window.close();" />
+            </body>
+            </html>
+        `);
+        printWindow.document.close();
     }
 </script>
 </body>
