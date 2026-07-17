@@ -1208,10 +1208,13 @@
                                 <p style="font-size:12px; color:#64748b; margin-top:8px;">Receive pending payments for IPD/OPD Credit Bills.</p>
                             </div>
                             
-                            <!-- Future Modules (Placeholders) -->
-                            <div class="module-card" style="opacity: 0.6; cursor: not-allowed;">
-                                <div class="module-icon-wrapper"><span class="material-symbols-outlined" style="color:#64748b;">account_balance_wallet</span></div>
-                                <div class="module-title">Daily Expenses (Soon)</div>
+                            <!-- 🔴 Daily Expenses Button -->
+                            <div class="module-card" onclick="openExpenseModal()">
+                                <div class="module-icon-wrapper" style="background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);">
+                                    <span class="material-symbols-outlined" style="color:#854d0e; font-size: 32px;">account_balance_wallet</span>
+                                </div>
+                                <div class="module-title">Daily Expenses</div>
+                                <p style="font-size:12px; color:#64748b; margin-top:8px;">Record petty cash for tea, transport & maintenance.</p>
                             </div>
                             <div class="module-card" style="opacity: 0.6; cursor: not-allowed;">
                                 <div class="module-icon-wrapper"><span class="material-symbols-outlined" style="color:#64748b;">request_quote</span></div>
@@ -1219,6 +1222,34 @@
                             </div>
                         </div>
                     </div>
+                    <!-- 🔴 NEW: Petty Cash Vouchers & Approval Ledger -->
+                            <div id="pettyCashLedgerSection" style="margin-top: 30px; background: white; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03); overflow: hidden;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 15px 20px; border-bottom: 1px solid #e2e8f0;">
+                                    <h3 style="margin: 0; color: #1e293b; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+                                        <span class="material-symbols-outlined" style="color: #ca8a04;">receipt_long</span> Petty Cash Vouchers & Approvals
+                                    </h3>
+                                    <button class="small-action primary" style="background: #2c598f; border-color: #2c598f; height: 32px;" onclick="fetchDailyExpenses()">
+                                        <span class="material-symbols-outlined" style="font-size: 16px; vertical-align: middle;">refresh</span> Refresh List
+                                    </button>
+                                </div>
+                                <div class="table-scroll-container" style="max-height: 350px; border: none; border-radius: 0;">
+                                    <table class="erp-pro-table" style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                        <thead style="background:#f1f5f9; position: sticky; top: 0; z-index: 10;">
+                                            <tr>
+                                                <th style="padding: 12px; text-align: left; width: 15%;">Date</th>
+                                                <th style="padding: 12px; text-align: left; width: 25%;">Category & Remark</th>
+                                                <th style="padding: 12px; text-align: right; width: 10%;">Amount (₹)</th>
+                                                <th style="padding: 12px; text-align: center; width: 15%;">Created By</th>
+                                                <th style="padding: 12px; text-align: center; width: 15%;">Status</th>
+                                                <th style="padding: 12px; text-align: center; width: 20%;">Action (Role Based)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pettyCashTableBody">
+                                            <tr><td colspan="6" style="text-align:center; padding: 30px; color: #94a3b8;">Click 'Refresh List' to load vouchers.</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                 </section>
             </div> <!-- 🔴 Closes pharmacy-workspace -->
         </div> <!-- 🔴 Closes pharmacy-shell -->
@@ -2068,6 +2099,50 @@
                     </button>
                 </div>
                 <button class="btn-submit-inc" id="cs_btnSubmit" onclick="submitCreditSettlement()" style="background: #27ae60;" disabled>Receive Payment & Print ➔</button>
+            </div>
+        </div>
+    </div>
+    <!-- 🔴 DAILY EXPENSES MODAL -->
+    <div id="expenseModal" class="modalOverlay" style="display:none; z-index: 20000;">
+        <div class="modalBox" style="width: 500px; max-width: 95%;">
+            <div class="modalHeader" style="background: #eab308; color: white;">
+                <h3 style="color: white; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">account_balance_wallet</span> Record Daily Expense
+                </h3>
+                <button class="modalCloseBtn" onclick="closeExpenseModal()" style="color: white; background: transparent;">✕</button>
+            </div>
+            <div class="modalBody" style="background: #f8fafc;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <div class="inc-form-group">
+                        <label style="font-size: 13px;">Main Category <span style="color:red">*</span></label>
+                        <select id="expCategory" onchange="updateSubCategories()" style="padding: 10px; font-weight: bold; color: #1e293b; border: 1px solid #ced4da; border-radius: 4px; outline: none;">
+                            <option value="">-- Select Category --</option>
+                            <option value="Staff Welfare">☕ Staff Welfare</option>
+                            <option value="Office Operations">📝 Office Operations</option>
+                            <option value="Facility & Maintenance">🧹 Facility & Maintenance</option>
+                            <option value="Logistics & Travel">🚕 Logistics & Travel</option>
+                            <option value="Miscellaneous">📦 Miscellaneous</option>
+                        </select>
+                    </div>
+                    <div class="inc-form-group">
+                        <label style="font-size: 13px;">Sub-Category <span style="color:red">*</span></label>
+                        <select id="expSubCategory" style="padding: 10px; font-weight: bold; color: #2c598f; border: 1px solid #ced4da; border-radius: 4px; outline: none;">
+                            <option value="">-- Select Sub-Category --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="inc-form-group" style="margin-bottom: 15px;">
+                    <label>Amount (₹) <span style="color:red">*</span></label>
+                    <input type="number" id="expAmount" placeholder="Enter Amount" min="1" style="font-size: 20px; font-weight: bold; color: #b45309; text-align: center; border: 2px solid #fde047;">
+                </div>
+                <div class="inc-form-group">
+                    <label>Paid To / Remark <span style="color:red">*</span></label>
+                    <input type="text" id="expRemark" placeholder="e.g. Tea bill paid to Raju / Auto fare" style="padding: 10px;">
+                </div>
+            </div>
+            <div class="modalFooter" style="display: flex; justify-content: space-between;">
+                <button class="btn-cancel" onclick="closeExpenseModal()">Cancel</button>
+                <button class="btn-submit-inc" id="btnSaveExpense" style="background: #ca8a04; color: #fff;" onclick="submitDailyExpense()">Save Expense ➔</button>
             </div>
         </div>
     </div>
@@ -7444,7 +7519,159 @@
             alert("Please allow pop-ups in your browser to print the ledger.");
         }
     }
-    
+    // ==========================================
+    // 🔴 DAILY EXPENSES LOGIC (With Sub-Categories)
+    // ==========================================
+    const expenseCategories = {
+        "Staff Welfare": ["Tea & Coffee", "Snacks / Meals", "Staff Advance", "Staff Medical / First Aid", "Other Welfare"],
+        "Office Operations": ["Stationery & Pens", "Printing & Xerox", "Courier & Postage", "Internet / Phone Bill", "Pooja & Festival Expenses"],
+        "Facility & Maintenance": ["Cleaning Supplies", "Plumbing / Electrical Repairs", "Hardware / Tools", "Pest Control", "Garbage Disposal"],
+        "Logistics & Travel": ["Auto / Cab Fare", "Fuel / Petrol", "Freight / Hamali (Loading)", "Parking Toll"],
+        "Miscellaneous": ["General Petty Cash", "Bank Charges / Commission", "Other"]
+    };
+
+    function updateSubCategories() {
+        let cat = document.getElementById('expCategory').value;
+        let subCat = document.getElementById('expSubCategory');
+        subCat.innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        if(cat && expenseCategories[cat]) {
+            expenseCategories[cat].forEach(sub => {
+                subCat.innerHTML += `<option value="${sub}">${sub}</option>`;
+            });
+        }
+    }
+
+    function openExpenseModal() {
+        document.getElementById('expenseModal').style.display = 'flex';
+        document.getElementById('expCategory').value = '';
+        document.getElementById('expSubCategory').innerHTML = '<option value="">-- Select Sub-Category --</option>';
+        document.getElementById('expAmount').value = '';
+        document.getElementById('expRemark').value = '';
+    }
+
+    function closeExpenseModal() {
+        document.getElementById('expenseModal').style.display = 'none';
+    }
+
+    async function submitDailyExpense() {
+        let cat = document.getElementById('expCategory').value;
+        let subCat = document.getElementById('expSubCategory').value;
+        let amt = parseFloat(document.getElementById('expAmount').value);
+        let rem = document.getElementById('expRemark').value.trim();
+
+        if(!cat || !subCat || isNaN(amt) || !rem) return alert("Please fill all mandatory fields (*)");
+        if(amt <= 0) return alert("Amount must be greater than 0");
+
+        if(!(await verifyUserPasskey("Record Daily Expense"))) return;
+
+        let btn = document.getElementById('btnSaveExpense');
+        let origTxt = btn.innerText; 
+        btn.innerText = "Saving..."; btn.disabled = true;
+
+        let payload = {
+            action: "saveDailyExpense",
+            unitName: loggedInUnit,
+            category: cat,
+            subCategory: subCat, // 🔴 नवीन फिल्ड
+            amount: amt,
+            remark: rem,
+            operatorName: window.lastVerifiedUser || loggedInName
+        };
+
+        fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(payload) })
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                showToast("Expense Saved Successfully!", "success");
+                closeExpenseModal();
+            } else { alert("Failed: " + res.message); }
+        })
+        .catch(err => alert("Connection error."))
+        .finally(() => { btn.innerText = origTxt; btn.disabled = false; });
+    }
+    // 🔴 FETCH & RENDER PETTY CASH VOUCHERS
+    function fetchDailyExpenses() {
+        let tbody = document.getElementById('pettyCashTableBody');
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#7f8c8d;">Loading vouchers...</td></tr>';
+        
+        fetch(SCRIPT_URL + "?action=getDailyExpenses&unitName=" + encodeURIComponent(loggedInUnit) + "&t=" + new Date().getTime())
+        .then(res => res.json())
+        .then(data => {
+            tbody.innerHTML = '';
+            if(!data.success || !data.data || data.data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#27ae60; font-weight:bold;">No pending or approved vouchers found.</td></tr>';
+                return;
+            }
+            
+            let roleCheck = String(currentRole).toUpperCase().trim();
+            
+            data.data.forEach(exp => {
+                let status = exp.status || "Pending Verification";
+                let statusHtml = "";
+                let actionHtml = "";
+                
+                // 🔴 Role Based Control Logic
+                if(status === "Pending Verification") {
+                    statusHtml = `<span style="background: #fffbeb; color: #d97706; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid #fde68a;">${status}</span>`;
+                    
+                    if(roleCheck === "ADMIN") { // 🔴 ADMIN = Accountant (For now)
+                        actionHtml = `<button onclick="updateExpenseStatus('${exp.id}', 'Verified')" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; width: 100%;">Verify (Checker)</button>`;
+                    } else {
+                        actionHtml = `<span style="color:#94a3b8; font-size:11px;">Waiting for Accountant</span>`;
+                    }
+                } 
+                else if (status === "Verified") {
+                    statusHtml = `<span style="background: #eff6ff; color: #2563eb; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid #bfdbfe;">Verified by Accountant</span>`;
+                    
+                    if(roleCheck === "PURCHASE MANAGER" || roleCheck === "ADMIN") { // 🔴 Manager = Approver
+                        actionHtml = `<button onclick="updateExpenseStatus('${exp.id}', 'Approved')" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px; width: 100%;">Approve (Manager)</button>`;
+                    } else {
+                        actionHtml = `<span style="color:#94a3b8; font-size:11px;">Waiting for Manager</span>`;
+                    }
+                } 
+                else if (status === "Approved") {
+                    statusHtml = `<span style="background: #f0fdf4; color: #16a34a; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; border: 1px solid #bbf7d0;">✓ Approved</span>`;
+                    actionHtml = `<span style="color:#16a34a; font-weight:bold; font-size:12px;">Completed</span>`;
+                }
+                
+                tbody.innerHTML += `<tr>
+                    <td style="color: #64748b; font-size: 12px;">${exp.date}</td>
+                    <td><b>${exp.subCategory}</b><br><span style="font-size: 11px; color: #64748b;">${exp.remark}</span></td>
+                    <td style="text-align: right; font-weight: bold; color: #b45309;">${parseFloat(exp.amount).toFixed(2)}</td>
+                    <td style="text-align: center; color: #475569; font-size: 12px;">${exp.maker}</td>
+                    <td style="text-align: center;">${statusHtml}</td>
+                    <td style="text-align: center;">${actionHtml}</td>
+                </tr>`;
+            });
+        })
+        .catch(err => {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#e74c3c;">Connection error while loading vouchers.</td></tr>';
+        });
+    }
+
+    async function updateExpenseStatus(rowId, newStatus) {
+        if(!confirm(`Are you sure you want to mark this voucher as ${newStatus}?`)) return;
+        if(!(await verifyUserPasskey(newStatus + " Voucher"))) return; // 🔴 Passkey verification for Accountant/Manager
+        
+        fetch(SCRIPT_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "updateExpenseStatus",
+                rowId: rowId,
+                newStatus: newStatus,
+                updatedBy: window.lastVerifiedUser || loggedInName
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if(res.success) {
+                showToast(`Voucher ${newStatus} Successfully!`, "success");
+                fetchDailyExpenses();
+            } else {
+                alert("Failed to update status.");
+            }
+        });
+    }
 </script>
 </body>
 </html>
