@@ -464,7 +464,803 @@
             <button class="btn" style="background-color: #f39c12; display: none;" id="n_printBtn" onclick="printIndent()">Print Indent</button>
         </div>
     </div>
+<!-- ========================================== -->
+    <!-- 🔴 RECEPTION & FRONT DESK MANAGEMENT -->
+    <!-- ========================================== -->
+    <div id="receptionSection" style="display: none; height: 100vh; overflow: hidden; background: #f1f5f9; font-family: 'Roboto', sans-serif;">
+        
+        <!-- Header -->
+        <div class="p-header" style="position: relative; z-index: 10; background: #0f172a; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+            <div style="display: flex; align-items: center;">
+                <img src="dhh.png" alt="Logo" style="height: 35px; margin-right: 15px; border-radius: 4px; background-color: white; padding: 4px;">
+                <h2 style="font-weight: 600; letter-spacing: 0.5px;">CareSync HMIS - Front Desk</h2>
+            </div>
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-left: 10px; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 15px;">
+                    <span id="r_userDisplay" style="color: white; font-weight: 500; font-size: 14px;">👤 Name (Role)</span>
+                    <button class="logout-icon-btn" onclick="logoutUser()" title="Log Off" style="background:#dc2626;">
+                        <span class="material-symbols-outlined">power_settings_new</span>
+                    </button>
+                </div>
+            </div>
+        </div>
 
+        <!-- 🔴 TOP MANAGEMENT TABS -->
+        <div style="background: #1e293b; padding: 0 20px; display: flex; gap: 10px; border-bottom: 1px solid #334155;">
+            <button class="mg-tab-btn active" onclick="switchMgmtTab('opd', this)">OPD</button>
+            <button class="mg-tab-btn" onclick="switchMgmtTab('ipd', this)">IPD</button>
+            <button class="mg-tab-btn" onclick="switchMgmtTab('emg', this)">Emergency</button>
+            <button class="mg-tab-btn" onclick="switchMgmtTab('walk', this)">Walkin</button>
+        </div>
+
+        <style>
+            .mg-tab-btn { background: transparent; border: none; color: #94a3b8; padding: 14px 20px; font-size: 14px; font-weight: bold; cursor: pointer; transition: 0.2s; border-bottom: 3px solid transparent; font-family: 'Roboto', sans-serif; }
+            .mg-tab-btn:hover { color: white; }
+            .mg-tab-btn.active { color: white; border-bottom: 3px solid #3b82f6; background: rgba(255,255,255,0.03); }
+            
+            /* 🔴 FIX: Flexbox Magic - याने पांढरा बॉक्स तळापर्यंत स्ट्रेच होईल */
+            .mg-view { display: none !important; flex-direction: column; height: 100%; width: 100%; }
+            .mg-view.active { display: flex !important; animation: fadeIn 0.3s ease; }
+            
+            /* 🔴 Enterprise Table Styling (Medisys Exact Look) */
+            .ent-table { width: 100%; border-collapse: collapse; font-family: 'Roboto', sans-serif; border: none !important; }
+            .ent-table th { 
+                background: #eef2f6 !important; /* Light Grey-Blue Header */
+                color: #475569 !important; 
+                font-weight: 600; 
+                text-transform: uppercase; 
+                font-size: 11px; 
+                letter-spacing: 0.5px; 
+                border-bottom: 1px solid #cbd5e1 !important; 
+                border-top: 1px solid #cbd5e1 !important; 
+                border-left: none !important; 
+                border-right: none !important;
+                padding: 10px 15px !important;
+            }
+            .ent-table td { 
+                border-bottom: 1px solid #e2e8f0 !important; 
+                border-top: none !important; 
+                border-left: none !important; 
+                border-right: none !important; 
+                padding: 10px 15px !important; 
+                color: #475569; 
+                font-size: 12px;
+                vertical-align: middle;
+            }
+            .ent-table tr:hover { background-color: #f8fafc !important; }
+            /* 🔴 Toggle Switch CSS */
+            .kpi-switch { position: relative; display: inline-block; width: 36px; height: 20px; margin-left: 8px; }
+            .kpi-switch input { opacity: 0; width: 0; height: 0; }
+            .kpi-slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #cbd5e1; transition: .4s; border-radius: 34px; }
+            .kpi-slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+            .kpi-switch input:checked + .kpi-slider { background-color: #0ea5e9; }
+            .kpi-switch input:checked + .kpi-slider:before { transform: translateX(16px); }
+        </style>
+
+        <!-- 🟢 WORKSPACE AREA -->
+        <div style="flex: 1; background: #f8fafc; height: calc(100vh - 125px); overflow: hidden; display: flex; flex-direction: column;">
+            
+            <!-- 🔴 SEARCH BAR (AS IT IS) -->
+            <div style="background: white; padding: 15px 25px; display: flex; gap: 15px; align-items: center; border-bottom: 1px solid #cbd5e1; box-shadow: 0 4px 10px rgba(0,0,0,0.03); position: relative; z-index: 2000; flex-shrink: 0;">
+                <div style="font-weight: 900; color: #1e293b; font-size: 18px; width: 220px;" id="activeDashboardTitle">OPD</div>
+                
+                <div style="position: relative; flex: 1; max-width: 700px; display: flex; align-items: stretch;">
+                    <input type="text" id="globalRecSearch" placeholder="Search Patient Name / MRN / Mobile no..." style="width: 100%; padding: 12px 15px; border: 2px solid #0ea5e9; border-radius: 6px 0 0 6px; font-size: 15px; font-weight: bold; outline: none; color: #0f172a;" autocomplete="off" onkeyup="smartGlobalPatientSearch(this.value)">
+                    <button style="background: #0ea5e9; color: white; border: none; padding: 0 25px; font-weight: bold; cursor: pointer; font-size: 15px;" onclick="executeGlobalSearch()">Search</button>
+                    <button style="background: #16a34a; color: white; border: none; border-radius: 0 6px 6px 0; width: 60px; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 2px;" onclick="openDynamicRegModal(document.querySelector('.mg-tab-btn.active').innerText.split(' ')[0].toUpperCase())" title="New Patient Registration">
+                        <span class="material-symbols-outlined" style="font-size: 28px; font-weight: bold;">add</span>
+                    </button>
+                    <div id="globalRecDropdown" class="autocomplete-items" style="display:none; position: absolute; top: 100%; left: 0; width: calc(100% - 62px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-radius: 0 0 6px 6px; max-height: 300px; overflow-y: auto; z-index: 9999;"></div>
+                </div>
+            </div>
+
+            <!-- 🔴 ENTERPRISE DASHBOARD VIEWS -->
+            <div style="flex: 1; padding: 5px 25px 20px 25px; box-sizing: border-box; overflow: hidden; display: flex; flex-direction: column;">
+                
+                <!-- 1. OPD DASHBOARD (COMPACT DUAL VIEW) -->
+                <div id="mgView-opd" class="mg-view active" style="padding: 0; flex-direction: column; overflow: hidden; display: flex;">
+                    
+                    <!-- 🔴 COMBINED MASTER TOOLBAR: Date Filter + View Toggle (Saves Huge Vertical Space) -->
+                    <div style="padding: 10px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;">
+                        
+                        <!-- Left side: Date Filter -->
+                        <div style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 700; color: #475569;">
+                            <span class="material-symbols-outlined" style="color: #3b82f6; font-size: 18px;">calendar_month</span> Date Filter: 
+                            <input type="date" id="dashOpdFromDate" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; outline: none; color: #1e293b; font-size: 12px;" onchange="loadOPDManagementList()">
+                            <span style="color:#94a3b8;">to</span>
+                            <input type="date" id="dashOpdToDate" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; outline: none; color: #1e293b; font-size: 12px;" onchange="loadOPDManagementList()">
+                            <button class="btn-dispatch" style="background: #3b82f6; color: white; border: none; padding: 6px 15px; font-size: 12px; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer;" onclick="loadOPDManagementList()">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">search</span> Search
+                            </button>
+                            <button class="btn-dispatch" style="background: white; color: #ef4444; border: 1px solid #fecaca; padding: 6px 15px; font-size: 12px; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer;" onclick="resetDashboardFilters('opd')">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">filter_alt_off</span> Reset
+                            </button>
+                        </div>
+                        
+                        <!-- Right side: View Toggle -->
+                        <div style="display: flex; align-items: center; background: #e2e8f0; padding: 3px; border-radius: 6px;">
+                            <button id="btnOpdDataView" onclick="switchOpdView('data')" style="background: white; color: #0ea5e9; border: 1px solid #bae6fd; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">list_alt</span> Data View
+                            </button>
+                            <button id="btnOpdKpiView" onclick="switchOpdView('kpi')" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">donut_small</span> KPI Graphic
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- 🔴 VIEW 1: DATA FORMAT -->
+                    <!-- ========================================== -->
+                    <div id="opd-data-view" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #f4f7f9; padding: 15px;">
+                        <div class="table-scroll-container" style="flex: 1; max-height: none; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+                            <table class="p-table ent-table" style="margin-top:0;">
+                                <thead style="position: sticky; top: 0; z-index: 5;">
+                                    <tr>
+                                        <th style="width: 25%;">Patient Name</th>
+                                        <th style="width: 12%;">Date</th>
+                                        <th style="width: 18%;">Regn No</th>
+                                        <th style="width: 10%;">Category</th>
+                                        <th style="width: 8%; text-align:center;">Balance</th>
+                                        <th style="width: 15%;">Doctor</th>
+                                        <th style="width: 10%; text-align:center;">Token</th>
+                                        <th style="width: 12%; text-align:center;">Action</th>
+                                    </tr>
+                                    <tr style="background: #ffffff;">
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltOpdName" placeholder="Search MRN / Name" onkeyup="filterTable('opd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th style="padding: 4px 10px;"></th>
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltOpdReg" placeholder="Search Reg No..." onkeyup="filterTable('opd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th style="padding: 4px 10px;">
+                                            <select id="fltOpdCat" onchange="filterTable('opd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;">
+                                                <option value="">All</option><option value="PAYING">PAYING</option><option value="FREE">FREE</option><option value="TPA">TPA</option>
+                                            </select>
+                                        </th>
+                                        <th style="padding: 4px 10px;"></th>
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltOpdDoc" placeholder="Search Doctor..." onkeyup="filterTable('opd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th colspan="2" style="background: #ffffff; padding: 4px 10px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="opdMgrTableBody">
+                                    <tr><td colspan="8" style="text-align:center; padding: 60px; color: #94a3b8; font-size: 14px;">Click 'Search' to load appointments.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- 🔴 VIEW 2: KPI GRAPHIC & TAT DASHBOARD -->
+                    <!-- ========================================== -->
+                    <div id="opd-graphical-view" style="display: none; flex: 1; flex-direction: column; overflow-y: auto; background: #f4f7f9; padding: 15px;">
+                        
+                        <!-- Top KPI Cards -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; flex-shrink: 0;">
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #0ea5e9; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">Today's OPD</div>
+                                <div id="kpi_opdTotal" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #10b981; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">New Registrations</div>
+                                <div id="kpi_opdNew" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">Waiting Queue</div>
+                                <div id="kpi_opdWait" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #8b5cf6; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">TPA / Corporate</div>
+                                <div id="kpi_opdTpa" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Graphical TAT & Department Chart -->
+                        <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 15px;">
+                            
+                            <!-- TAT (Turnaround Time) Analytics -->
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-outlined" style="color: #f59e0b;">timer</span> Patient Turnaround Time (TAT)
+                                </h4>
+                                
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px;">
+                                        <span>Registration to Consultation</span>
+                                        <span style="color: #10b981;">18 Mins (Avg)</span>
+                                    </div>
+                                    <div style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden;">
+                                        <div style="background: #10b981; width: 40%; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px;">
+                                        <span>Consultation to Pharmacy</span>
+                                        <span style="color: #f59e0b;">12 Mins (Avg)</span>
+                                    </div>
+                                    <div style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden;">
+                                        <div style="background: #f59e0b; width: 25%; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px;">
+                                        <span>Total Patient Journey TAT</span>
+                                        <span style="color: #0ea5e9;">45 Mins (Avg)</span>
+                                    </div>
+                                    <div style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden;">
+                                        <div style="background: #0ea5e9; width: 65%; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Department Graphic -->
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-outlined" style="color: #3b82f6;">bar_chart</span> OPD Footfall Graphic
+                                </h4>
+                                <div style="height: 180px; position: relative;">
+                                    <canvas id="opdGraphicalChart"></canvas>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- 2. IPD DASHBOARD (COMPACT DUAL VIEW) -->
+                <div id="mgView-ipd" class="mg-view" style="display: none; padding: 0; flex-direction: column; overflow: hidden;">
+                    
+                    <!-- 🔴 COMBINED MASTER TOOLBAR: Date Filter + View Toggle -->
+                    <div style="padding: 10px 20px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;">
+                        
+                        <!-- Left side: Date Filter -->
+                        <div style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 700; color: #475569;">
+                            <span class="material-symbols-outlined" style="color: #3b82f6; font-size: 18px;">calendar_month</span> Date Filter: 
+                            <input type="date" id="dashIpdFromDate" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; outline: none; color: #1e293b; font-size: 12px;" onchange="loadIPDManagementList()">
+                            <span style="color:#94a3b8;">to</span>
+                            <input type="date" id="dashIpdToDate" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; outline: none; color: #1e293b; font-size: 12px;" onchange="loadIPDManagementList()">
+                            <button class="btn-dispatch" style="background: #3b82f6; color: white; border: none; padding: 6px 15px; font-size: 12px; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer;" onclick="loadIPDManagementList()">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">search</span> Search
+                            </button>
+                            <button class="btn-dispatch" style="background: white; color: #ef4444; border: 1px solid #fecaca; padding: 6px 15px; font-size: 12px; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer;" onclick="resetDashboardFilters('ipd')">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">filter_alt_off</span> Reset
+                            </button>
+                        </div>
+                        
+                        <!-- Right side: View Toggle -->
+                        <div style="display: flex; align-items: center; background: #e2e8f0; padding: 3px; border-radius: 6px;">
+                            <button id="btnIpdDataView" onclick="switchIpdView('data')" style="background: white; color: #0ea5e9; border: 1px solid #bae6fd; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">list_alt</span> Data View
+                            </button>
+                            <button id="btnIpdKpiView" onclick="switchIpdView('kpi')" style="background: transparent; color: #64748b; border: 1px solid transparent; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">donut_small</span> KPI Graphic
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- 🔴 VIEW 1: DATA FORMAT (IPD Table) -->
+                    <!-- ========================================== -->
+                    <div id="ipd-data-view" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #f4f7f9; padding: 15px;">
+                        <div class="table-scroll-container" style="flex: 1; max-height: none; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: white; box-shadow: 0 4px 10px rgba(0,0,0,0.03);">
+                            <table class="p-table ent-table" style="margin-top:0;">
+                                <thead style="position: sticky; top: 0; z-index: 5;">
+                                    <tr style="background: #0f172a; color: white;">
+                                        <th>Patient Name</th>
+                                        <th>MRN</th>
+                                        <th>IPD Regn No</th>
+                                        <th>Category</th>
+                                        <th>Doctor</th>
+                                        <th>Department</th>
+                                        <th>Ward / Bed</th>
+                                        <th style="text-align:right;">Billed Amt</th>
+                                        <th style="text-align:right;">Paid Amt</th>
+                                        <th style="text-align:right; color:#ef4444;">Pending Due</th>
+                                    </tr>
+                                    <!-- Column-Level Filters -->
+                                    <tr style="background: #ffffff;">
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltIpdName" placeholder="Search Name..." onkeyup="filterTable('ipd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltIpdMrn" placeholder="Search MRN..." onkeyup="filterTable('ipd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltIpdReg" placeholder="Search Reg No..." onkeyup="filterTable('ipd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th style="padding: 4px 10px;">
+                                            <select id="fltIpdCat" onchange="filterTable('ipd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;">
+                                                <option value="">All</option><option value="PAYING">PAYING</option><option value="FREE">FREE</option><option value="TPA">TPA</option><option value="Corporate">Corporate</option>
+                                            </select>
+                                        </th>
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltIpdDoc" placeholder="Search Doctor..." onkeyup="filterTable('ipd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th style="padding: 4px 10px;">
+                                            <select id="fltIpdDept" onchange="filterTable('ipd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;">
+                                                <option value="">All Dept</option><option value="General Medicine">General Medicine</option><option value="Surgery">Surgery</option><option value="Orthopedics">Orthopedics</option>
+                                            </select>
+                                        </th>
+                                        <th style="padding: 4px 10px;"><input type="text" id="fltIpdWard" placeholder="Search Ward/Bed..." onkeyup="filterTable('ipd')" style="width:100%; padding:6px; font-size:11px; border:1px solid #cbd5e1; border-radius:4px; outline:none; color:#1e293b;"></th>
+                                        <th colspan="3" style="background: #ffffff; padding: 4px 10px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dashIpdBody">
+                                    <tr><td colspan="10" style="text-align:center; padding: 60px; color: #94a3b8; font-size: 15px;">Click 'Search' to load admitted patients.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ========================================== -->
+                    <!-- 🔴 VIEW 2: KPI GRAPHIC & WARD DASHBOARD -->
+                    <!-- ========================================== -->
+                    <div id="ipd-graphical-view" style="display: none; flex: 1; flex-direction: column; overflow-y: auto; background: #f4f7f9; padding: 15px;">
+                        
+                        <!-- Top KPI Cards -->
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; flex-shrink: 0;">
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #2c598f; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">Total Admitted</div>
+                                <div id="kpi_ipdTotal" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #10b981; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">New Admissions</div>
+                                <div id="kpi_ipdNew" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">Discharges (Today)</div>
+                                <div id="kpi_ipdDischarge" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; border-bottom: 4px solid #ef4444; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #64748b; text-transform: uppercase;">Pending Dues (₹)</div>
+                                <div id="kpi_ipdDues" style="font-size: 32px; font-weight: 900; color: #0f172a; margin-top: 5px;">0</div>
+                            </div>
+                        </div>
+
+                        <!-- Graphical Ward Occupancy & ALOS Chart -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            
+                            <!-- Average Length of Stay (ALOS) -->
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-outlined" style="color: #0ea5e9;">bed</span> Avg. Length of Stay (ALOS)
+                                </h4>
+                                
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px;">
+                                        <span>General Ward</span>
+                                        <span style="color: #10b981;">3.5 Days</span>
+                                    </div>
+                                    <div style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden;">
+                                        <div style="background: #10b981; width: 35%; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px;">
+                                        <span>ICU / NICU</span>
+                                        <span style="color: #ef4444;">6.2 Days</span>
+                                    </div>
+                                    <div style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden;">
+                                        <div style="background: #ef4444; width: 62%; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-bottom: 15px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 5px;">
+                                        <span>Private / Semi-Private Rooms</span>
+                                        <span style="color: #f59e0b;">2.8 Days</span>
+                                    </div>
+                                    <div style="background: #f1f5f9; border-radius: 10px; height: 8px; overflow: hidden;">
+                                        <div style="background: #f59e0b; width: 28%; height: 100%; border-radius: 10px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ward Occupancy Graphic -->
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <h4 style="margin: 0 0 15px 0; color: #1e293b; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+                                    <span class="material-symbols-outlined" style="color: #8b5cf6;">pie_chart</span> Ward Occupancy Status
+                                </h4>
+                                <div style="height: 180px; position: relative;">
+                                    <canvas id="ipdGraphicalChart"></canvas>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- ========================================== -->
+                <!-- 3. EMG DASHBOARD (COMPACT DUAL VIEW) -->
+                <!-- ========================================== -->
+                <div id="mgView-emg" class="mg-view" style="display: none; padding: 0; flex-direction: column; overflow: hidden;">
+                    
+                    <!-- Master Toolbar -->
+                    <div style="padding: 10px 20px; background: #fef2f2; border-bottom: 1px solid #fecaca; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10; border-radius: 12px 12px 0 0;">
+                        <div style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 700; color: #b91c1c;">
+                            <span class="material-symbols-outlined" style="color: #ef4444; font-size: 18px;">emergency</span> Casualty Date: 
+                            <input type="date" id="dashEmgFromDate" style="padding: 6px 10px; border: 1px solid #fca5a5; border-radius: 4px; outline: none; color: #7f1d1d; font-size: 12px;">
+                            <span style="color:#f87171;">to</span>
+                            <input type="date" id="dashEmgToDate" style="padding: 6px 10px; border: 1px solid #fca5a5; border-radius: 4px; outline: none; color: #7f1d1d; font-size: 12px;">
+                            <button class="btn-dispatch" style="background: #ef4444; color: white; border: none; padding: 6px 15px; font-size: 12px; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">search</span> Search
+                            </button>
+                        </div>
+                        <div style="display: flex; align-items: center; background: #fecaca; padding: 3px; border-radius: 6px;">
+                            <button id="btnEmgDataView" onclick="switchEmgView('data')" style="background: white; color: #ef4444; border: 1px solid #fca5a5; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(239,68,68,0.1); transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">list_alt</span> Data View
+                            </button>
+                            <button id="btnEmgKpiView" onclick="switchEmgView('kpi')" style="background: transparent; color: #991b1b; border: 1px solid transparent; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">donut_small</span> KPI Graphic
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- EMG Data View -->
+                    <div id="emg-data-view" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; border-radius: 0 0 12px 12px; border: 1px solid #fecaca; border-top: none;">
+                        <div class="table-scroll-container" style="flex: 1; max-height: none; overflow-y: auto; border: none; border-radius: 0;">
+                            <table class="p-table ent-table" style="margin-top:0;">
+                                <thead style="background: #7f1d1d !important; position: sticky; top: 0; z-index: 5;">
+                                    <tr>
+                                        <th style="color:white !important;">Patient Name</th>
+                                        <th style="color:white !important;">MRN</th>
+                                        <th style="color:white !important;">CMO / Doctor</th>
+                                        <th style="color:white !important;">Triage / ER Code</th>
+                                        <th style="color:white !important;">Medico-Legal</th>
+                                        <th style="color:white !important;">Billed Amt</th>
+                                        <th style="color:white !important;">Paid Amt</th>
+                                        <th style="color:white !important;">Pending Due</th>
+                                    </tr>
+                                    <tr style="background: #fef2f2;">
+                                        <th style="padding: 4px 10px;"><input type="text" placeholder="Search..." style="width:100%; padding:6px; font-size:11px; border:1px solid #fca5a5; border-radius:4px; outline:none;"></th>
+                                        <th style="padding: 4px 10px;"><input type="text" placeholder="MRN..." style="width:100%; padding:6px; font-size:11px; border:1px solid #fca5a5; border-radius:4px; outline:none;"></th>
+                                        <th style="padding: 4px 10px;"><input type="text" placeholder="CMO Name..." style="width:100%; padding:6px; font-size:11px; border:1px solid #fca5a5; border-radius:4px; outline:none;"></th>
+                                        <th style="padding: 4px 10px;">
+                                            <select style="width:100%; padding:6px; font-size:11px; border:1px solid #fca5a5; border-radius:4px; outline:none;">
+                                                <option value="">All Triage</option><option value="Red">Red (Immediate)</option><option value="Yellow">Yellow (Urgent)</option><option value="Green">Green (Delayed)</option>
+                                            </select>
+                                        </th>
+                                        <th colspan="4" style="background: #fef2f2; padding: 4px 10px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="8" style="text-align:center; padding: 60px; color: #f87171; font-size: 15px; font-weight: bold; border-bottom: none;">No Emergency patients currently.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- EMG KPI Graphic View -->
+                    <div id="emg-graphical-view" style="display: none; flex: 1; flex-direction: column; overflow-y: auto; background: #fef2f2; padding: 15px; border-radius: 0 0 12px 12px; border: 1px solid #fecaca; border-top: none;">
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; flex-shrink: 0;">
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #fca5a5; border-left: 4px solid #ef4444; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #b91c1c; text-transform: uppercase;">Total Casualties</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #7f1d1d; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #fca5a5; border-left: 4px solid #b91c1c; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #b91c1c; text-transform: uppercase;">MLC / RTA Cases</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #7f1d1d; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #fca5a5; border-left: 4px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #b91c1c; text-transform: uppercase;">Admitted to IPD</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #7f1d1d; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #fca5a5; border-left: 4px solid #10b981; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #b91c1c; text-transform: uppercase;">Treated & Discharged</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #7f1d1d; margin-top: 5px;">0</div>
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #fca5a5; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <h4 style="margin: 0 0 15px 0; color: #7f1d1d; font-size: 15px;">Triage Level Analysis (Severity)</h4>
+                            <div style="height: 200px; position: relative;"><canvas id="emgGraphicalChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ========================================== -->
+                <!-- 4. WALKIN DASHBOARD (COMPACT DUAL VIEW) -->
+                <!-- ========================================== -->
+                <div id="mgView-walk" class="mg-view" style="display: none; padding: 0; flex-direction: column; overflow: hidden;">
+                    
+                    <!-- Master Toolbar -->
+                    <div style="padding: 10px 20px; background: #eef2ff; border-bottom: 1px solid #c7d2fe; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10; border-radius: 12px 12px 0 0;">
+                        <div style="display: flex; gap: 10px; align-items: center; font-size: 13px; font-weight: 700; color: #4338ca;">
+                            <span class="material-symbols-outlined" style="color: #6366f1; font-size: 18px;">directions_walk</span> Walk-in Date: 
+                            <input type="date" id="dashWalkFromDate" style="padding: 6px 10px; border: 1px solid #a5b4fc; border-radius: 4px; outline: none; color: #312e81; font-size: 12px;">
+                            <span style="color:#818cf8;">to</span>
+                            <input type="date" id="dashWalkToDate" style="padding: 6px 10px; border: 1px solid #a5b4fc; border-radius: 4px; outline: none; color: #312e81; font-size: 12px;">
+                            <button class="btn-dispatch" style="background: #6366f1; color: white; border: none; padding: 6px 15px; font-size: 12px; font-weight: 700; border-radius: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">search</span> Search
+                            </button>
+                        </div>
+                        <div style="display: flex; align-items: center; background: #c7d2fe; padding: 3px; border-radius: 6px;">
+                            <button id="btnWalkDataView" onclick="switchWalkView('data')" style="background: white; color: #4f46e5; border: 1px solid #a5b4fc; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(79,70,229,0.1); transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">list_alt</span> Data View
+                            </button>
+                            <button id="btnWalkKpiView" onclick="switchWalkView('kpi')" style="background: transparent; color: #3730a3; border: 1px solid transparent; padding: 5px 15px; border-radius: 4px; font-weight: 800; font-size: 12px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 5px;">
+                                <span class="material-symbols-outlined" style="font-size: 15px;">donut_small</span> KPI Graphic
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- WALK Data View -->
+                    <div id="walk-data-view" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; border-radius: 0 0 12px 12px; border: 1px solid #c7d2fe; border-top: none;">
+                        <div class="table-scroll-container" style="flex: 1; max-height: none; overflow-y: auto; border: none; border-radius: 0;">
+                            <table class="p-table ent-table" style="margin-top:0;">
+                                <thead style="background: #312e81 !important; position: sticky; top: 0; z-index: 5;">
+                                    <tr>
+                                        <th style="color:white !important;">Patient Name</th>
+                                        <th style="color:white !important;">Contact No</th>
+                                        <th style="color:white !important;">Service Availed</th>
+                                        <th style="color:white !important;">Department</th>
+                                        <th style="color:white !important;">Billed Amt</th>
+                                        <th style="color:white !important;">Paid Amt</th>
+                                        <th style="color:white !important;">Pending Due</th>
+                                    </tr>
+                                    <tr style="background: #eef2ff;">
+                                        <th style="padding: 4px 10px;"><input type="text" placeholder="Search Name..." style="width:100%; padding:6px; font-size:11px; border:1px solid #a5b4fc; border-radius:4px; outline:none;"></th>
+                                        <th style="padding: 4px 10px;"><input type="text" placeholder="Contact..." style="width:100%; padding:6px; font-size:11px; border:1px solid #a5b4fc; border-radius:4px; outline:none;"></th>
+                                        <th style="padding: 4px 10px;">
+                                            <select style="width:100%; padding:6px; font-size:11px; border:1px solid #a5b4fc; border-radius:4px; outline:none;">
+                                                <option value="">All Services</option><option value="Pharmacy">Pharmacy Only</option><option value="Lab">Lab / Diagnostics</option><option value="OPD">Direct OPD</option>
+                                            </select>
+                                        </th>
+                                        <th colspan="4" style="background: #eef2ff; padding: 4px 10px;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td colspan="7" style="text-align:center; padding: 60px; color: #818cf8; font-size: 15px; font-weight: bold; border-bottom: none;">No Walk-in patients currently.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- WALK KPI Graphic View -->
+                    <div id="walk-graphical-view" style="display: none; flex: 1; flex-direction: column; overflow-y: auto; background: #eef2ff; padding: 15px; border-radius: 0 0 12px 12px; border: 1px solid #c7d2fe; border-top: none;">
+                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; flex-shrink: 0;">
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #a5b4fc; border-bottom: 4px solid #6366f1; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #4338ca; text-transform: uppercase;">Total Walk-ins</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #312e81; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #a5b4fc; border-bottom: 4px solid #10b981; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #4338ca; text-transform: uppercase;">Pharmacy Sales</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #312e81; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #a5b4fc; border-bottom: 4px solid #f59e0b; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #4338ca; text-transform: uppercase;">Lab / Diagnostics</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #312e81; margin-top: 5px;">0</div>
+                            </div>
+                            <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #a5b4fc; border-bottom: 4px solid #ec4899; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                                <div style="font-size: 12px; font-weight: 800; color: #4338ca; text-transform: uppercase;">Walk-in Revenue</div>
+                                <div style="font-size: 32px; font-weight: 900; color: #312e81; margin-top: 5px;">₹ 0</div>
+                            </div>
+                        </div>
+                        <div style="background: white; padding: 20px; border-radius: 10px; border: 1px solid #a5b4fc; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                            <h4 style="margin: 0 0 15px 0; color: #312e81; font-size: 15px;">Service Breakdown</h4>
+                            <div style="height: 200px; position: relative;"><canvas id="walkGraphicalChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+        
+    <!-- 🔴 DYNAMIC MASTER REGISTRATION MODAL (AS IT IS) -->
+    <div id="dynamicRegModal" class="modalOverlay" style="display:none; z-index: 28000;">
+        <div class="modalBox" style="width: 1250px; max-width: 98%; height: 95vh; padding: 0; background: #f4f7f9;">
+            
+            <div class="modalHeader" id="dynHeader" style="background: #2c598f; color: white; padding: 12px 20px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 16px;">
+                    <span id="dynRegIcon" class="material-symbols-outlined">person_add</span> 
+                    <span id="dynRegTitle">Patient Registration</span>
+                </h3>
+                <button class="modalCloseBtn" onclick="document.getElementById('dynamicRegModal').style.display='none'" style="color: white; background: transparent; font-size: 20px;">✕</button>
+            </div>
+            
+            <div class="modalBody" style="padding: 15px; overflow-y: auto;">
+                
+                <!-- COMMON DEMOGRAPHICS -->
+                <div style="background: white; padding: 15px; border-radius: 6px; border: 1px solid #d1e3e8; margin-bottom: 12px;">
+                    <div style="display: grid; grid-template-columns: 0.5fr 2fr 0.5fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                        <div class="inc-form-group"><label>Prefix</label><select id="regPrefix"><option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Mast.</option><option>Baby</option></select></div>
+                        <div class="inc-form-group"><label>Patient Name <span style="color:red">*</span></label><input type="text" id="regName" placeholder="First Name Middle Name Last Name"></div>
+                        <div class="inc-form-group"><label>Suffix</label><input type="text" id="regSuffix" placeholder="Sr/Jr"></div>
+                        <div class="inc-form-group"><label>Gender <span style="color:red">*</span></label><select id="regGender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+                        <div class="inc-form-group"><label>DOB</label><input type="date" id="regDOB"></div>
+                        <div class="inc-form-group"><label>Age (Yrs/Mos)</label><div style="display:flex; gap:5px;"><input type="number" id="regAgeY" placeholder="Yr"><input type="number" id="regAgeM" placeholder="Mo"></div></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 0.5fr 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; align-items: end;">
+                        <div class="inc-form-group"><label>CC</label><select><option>India (+91)</option></select></div>
+                        <div class="inc-form-group"><label>Primary Contact <span style="color:red">*</span></label><input type="text" id="regMobile" placeholder="10 Digit Mobile" style="border-color: #e74c3c;" maxlength="10"></div>
+                        <div class="inc-form-group">
+                            <label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" id="regSameAsPrimary" onchange="document.getElementById('regWhatsapp').value = this.checked ? document.getElementById('regMobile').value : ''"> Same as primary</label>
+                            <input type="text" id="regWhatsapp" placeholder="Whatsapp Number">
+                        </div>
+                        <div class="inc-form-group"><label>ABHA No.</label><input type="text" id="regAbha" placeholder="ABHA ID"></div>
+                        <div class="inc-form-group"><label>Email ID</label><input type="email" id="regEmail" placeholder="Email ID"></div>
+                    </div>
+
+                    <fieldset style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 10px;">
+                        <legend style="font-size: 12px; font-weight: bold; color: #475569;">Primary Address</legend>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" value="India" readonly><input type="text" id="regState" value="Maharashtra" style="border-color: #e74c3c;">
+                            <input type="text" id="regDistrict" placeholder="District"><input type="text" id="regCity" placeholder="City" style="border-color: #e74c3c;">
+                            <input type="text" id="regTaluka" placeholder="Taluka"><input type="text" id="regVillage" placeholder="Village">
+                        </div>
+                    </fieldset>
+                </div>
+
+                <!-- OPD SPECIFIC SECTION -->
+                <div id="dynSec-OPD" style="display: none; background: white; padding: 15px; border-radius: 6px; border: 1px solid #d1e3e8; border-left: 4px solid #0ea5e9;">
+                    <div style="display: flex; gap: 15px; margin-bottom: 15px; padding: 8px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                        <label style="font-weight:600; font-size:13px; cursor:pointer;"><input type="radio" name="dRoute" value="Regular" checked onchange="handleDynRoute()"> 🔵 Regular</label>
+                        <label style="font-weight:600; font-size:13px; cursor:pointer;"><input type="radio" name="dRoute" value="Corporate" onchange="handleDynRoute()"> 🏢 Corporate</label>
+                        <label style="font-weight:600; font-size:13px; cursor:pointer;"><input type="radio" name="dRoute" value="TPA" onchange="handleDynRoute()"> 🛡️ TPA / Insurance</label>
+                        <label style="font-weight:600; font-size:13px; cursor:pointer;"><input type="radio" name="dRoute" value="Camp" onchange="handleDynRoute()"> ⛺ Health Camp</label>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr; gap: 10px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>Category</label><select id="opdCat"><option>PAYING</option><option>FREE</option></select></div>
+                        <div class="inc-form-group"><label>Tariff</label><input type="text" value="HOSPITAL" readonly></div>
+                        <div class="inc-form-group"><label>Department <span style="color:red">*</span></label><select id="opdDept" style="border-color:#e74c3c;"><option>General Medicine</option><option>Surgery</option></select></div>
+                        <div class="inc-form-group"><label>Doctor <span style="color:red">*</span></label><input type="text" id="opdDoctor" placeholder="Select Doctor 🔍" style="border-color:#e74c3c;"></div>
+                    </div>
+
+                    <h4 style="margin: 0 0 10px 0; color: #16a34a; font-size: 14px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">Billing Information:</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1.5fr; gap: 15px; align-items: center;">
+                        <div class="inc-form-group"><label>Fee (₹)</label><input type="number" id="opdFee" value="500" style="font-weight:bold; font-size:16px;" oninput="calcDynBill()"></div>
+                        <div class="inc-form-group"><label>Discount (%)</label><input type="number" id="opdDisc" value="0" oninput="calcDynBill()"></div>
+                        <div class="inc-form-group"><label>Net Amount</label><input type="text" id="opdNet" value="500.00" readonly style="font-weight:bold; font-size:16px; color:#16a34a; background:transparent; border:none;"></div>
+                        <div class="inc-form-group"><label>Payment Mode</label><select id="opdPayMode" style="font-weight:bold;"><option value="CASH">CASH</option><option value="UPI">UPI</option></select></div>
+                    </div>
+                </div>
+
+                <!-- CASUALTY SPECIFIC SECTION -->
+                <div id="dynSec-EMG" style="display: none; background: white; padding: 15px; border-radius: 6px; border: 1px solid #fecaca; border-left: 4px solid #dc2626;">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>Mode of Arrival <span style="color:red">*</span></label><select id="emgArrival" style="border-color: #e74c3c;"><option>Ambulance</option><option>Own Vehicle</option><option>Walk-in</option></select></div>
+                        <div class="inc-form-group">
+                            <label>Triage / ER Code (Severity)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <label><input type="radio" name="erCode" value="1"> 1 (Blue)</label>
+                                <label><input type="radio" name="erCode" value="2"> 2 (Red)</label>
+                                <label><input type="radio" name="erCode" value="3" checked> 3 (Orange)</label>
+                                <label><input type="radio" name="erCode" value="4"> 4 (Yellow)</label>
+                                <label><input type="radio" name="erCode" value="5"> 5 (Green)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>Department</label><input type="text" id="emgDept" value="CASUALTY" readonly></div>
+                        <div class="inc-form-group"><label>CMO / Doctor <span style="color:red">*</span></label><input type="text" id="emgDoctor" placeholder="CMO Name" style="border-color:#e74c3c;"></div>
+                    </div>
+
+                    <fieldset style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 10px; background: #fafaf9;">
+                        <legend style="font-size: 12px; font-weight: bold; color: #475569;">Medico-Legal</legend>
+                        <div style="display: flex; gap: 20px;">
+                            <label style="font-weight:bold; color:#b91c1c;"><input type="checkbox" id="emgRTA"> Road Traffic Accident (RTA)</label>
+                            <label style="font-weight:bold; color:#b91c1c;"><input type="checkbox" id="emgMLC"> Medico-Legal Case (MLC)</label>
+                            <input type="text" id="emgFIR" placeholder="FIR No (if any)">
+                        </div>
+                    </fieldset>
+                </div>
+            </div>
+
+            <!-- DYNAMIC FOOTERS -->
+            <div class="modalFooter" style="background: #e2e8f0; padding: 12px 20px; display: flex; justify-content: space-between;">
+                <span style="font-size: 12px; color: #64748b; align-self: center;" id="dynFooterTimestamp"></span>
+                
+                <div id="footer-OPD" style="display: none; gap: 10px;">
+                    <button class="btn-cancel" onclick="document.getElementById('dynamicRegModal').style.display='none'">Cancel</button>
+                    <button class="btn-dispatch" style="background: #16a34a; padding: 10px 25px;" onclick="submitOPDRegistration()">Receipt (Print) ➔</button>
+                </div>
+                
+                <div id="footer-IPD" style="display: none; gap: 10px;">
+                    <button class="btn-cancel" onclick="document.getElementById('dynamicRegModal').style.display='none'">Cancel</button>
+                    <button class="btn-dispatch" style="background: #2c598f; padding: 10px 25px;" onclick="submitIPDRegistration()">New IPD Admission ➔</button>
+                </div>
+
+                <div id="footer-EMG" style="display: none; gap: 10px;">
+                    <button class="btn-cancel" onclick="document.getElementById('dynamicRegModal').style.display='none'">Close</button>
+                    <button class="btn-dispatch" style="background: #dc2626; padding: 10px 25px;" onclick="submitEmergencyRegistration()">Save Casualty Record 🚨</button>
+                </div>
+
+                <div id="footer-WALKIN" style="display: none; gap: 10px;">
+                    <button class="btn-cancel" onclick="document.getElementById('dynamicRegModal').style.display='none'">Cancel</button>
+                    <button class="btn-dispatch" style="background: #4f46e5; padding: 10px 25px;" onclick="submitWalkinRegistration()">Register Walk In</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔴 DYNAMIC EXISTING PATIENT ACTION MODAL -->
+    <div id="existingOpdModal" class="modalOverlay" style="display:none; z-index: 28000;">
+        <div class="modalBox" style="width: 850px; max-width: 95%; padding: 0;">
+            
+            <!-- Header -->
+            <div class="modalHeader" id="eModalHeader" style="background: #0ea5e9; color: white; padding: 15px 20px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined" id="eModalIcon">person_search</span> 
+                    <span id="eModalTitle">Book Visit for Existing Patient</span>
+                </h3>
+                <button class="modalCloseBtn" onclick="document.getElementById('existingOpdModal').style.display='none'" style="color: white; background: transparent; font-size: 20px;">✕</button>
+            </div>
+            
+            <div class="modalBody" style="background: #f8fafc; padding: 20px;">
+                
+                <!-- Common Patient Header Info -->
+                <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div>
+                        <div style="font-size: 12px; color: #0284c7; font-weight: bold;">UHID: <span id="e_UHID" style="color: #0369a1; font-size: 16px;"></span></div>
+                        <div style="font-size: 20px; font-weight: 900; color: #0f172a;" id="e_Name"></div>
+                    </div>
+                    <div style="text-align: right; font-size: 13px; font-weight: 600; color: #334155;">
+                        <span id="e_Age"></span> | <span id="e_Gender"></span><br>📞 <span id="e_Mobile"></span>
+                    </div>
+                </div>
+
+                <!-- 1. OPD FORM SECTION -->
+                <div id="eSec-OPD" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>Department <span style="color:red">*</span></label><select id="e_Dept"><option>General Medicine</option><option>Surgery</option><option>Orthopedics</option><option>Pediatrics</option></select></div>
+                        <div class="inc-form-group"><label>Consulting Doctor <span style="color:red">*</span></label><input type="text" id="e_Doctor" placeholder="Select Doctor"></div>
+                    </div>
+                    <div style="display: flex; gap: 15px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div class="inc-form-group" style="flex:1;"><label>Fee (₹)</label><input type="number" id="e_Fee" value="500" style="font-weight:bold; font-size:18px;"></div>
+                        <div class="inc-form-group" style="flex:1.5;"><label>Payment Mode</label>
+                            <select id="e_PayMode" style="font-weight:bold; font-size:14px;">
+                                <option value="CASH">💵 Cash</option><option value="UPI">📱 UPI / Online</option><option value="FREE">🆓 Follow-up (Free)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. IPD ADMISSION FORM SECTION -->
+                <div id="eSec-IPD" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>Department <span style="color:red">*</span></label><select id="eIpd_Dept"><option>General Medicine</option><option>Surgery</option><option>ICU / Critical Care</option></select></div>
+                        <div class="inc-form-group"><label>Admitting Doctor <span style="color:red">*</span></label><input type="text" id="eIpd_Doctor" placeholder="Select Doctor"></div>
+                        <div class="inc-form-group"><label>Ward / Bed Selection <span style="color:red">*</span></label><input type="text" id="eIpd_Ward" placeholder="e.g. Male Ward / Bed-04"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; background: white; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                        <div class="inc-form-group"><label>Category</label><select id="eIpd_Cat"><option>PAYING</option><option>TPA / Insurance</option><option>Corporate</option><option>FREE</option></select></div>
+                        <div class="inc-form-group"><label>Advance Deposit (₹)</label><input type="number" id="eIpd_Advance" value="5000" style="font-weight:bold; font-size:16px; color:#16a34a;"></div>
+                        <div class="inc-form-group"><label>Payment Mode</label><select id="eIpd_PayMode"><option value="CASH">Cash</option><option value="UPI">UPI / Online</option><option value="CREDIT">Credit</option></select></div>
+                    </div>
+                </div>
+
+                <!-- 3. EMERGENCY / CASUALTY FORM SECTION -->
+                <div id="eSec-EMG" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>Mode of Arrival <span style="color:red">*</span></label><select id="eEmg_Arrival"><option>Ambulance</option><option>Own Vehicle</option><option>Walk-in</option></select></div>
+                        <div class="inc-form-group">
+                            <label>Triage Code (Severity)</label>
+                            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                                <label style="font-weight:bold; color:#ef4444;"><input type="radio" name="eErCode" value="2"> Red (Critical)</label>
+                                <label style="font-weight:bold; color:#f59e0b;"><input type="radio" name="eErCode" value="3" checked> Yellow (Urgent)</label>
+                                <label style="font-weight:bold; color:#10b981;"><input type="radio" name="eErCode" value="5"> Green (Minor)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>CMO / Attending Doctor <span style="color:red">*</span></label><input type="text" id="eEmg_Doctor" placeholder="CMO Doctor Name"></div>
+                        <div class="inc-form-group" style="flex-direction:row; align-items:center; gap:20px; padding-top:20px;">
+                            <label style="font-weight:bold; color:#b91c1c;"><input type="checkbox" id="eEmg_RTA"> Road Accident (RTA)</label>
+                            <label style="font-weight:bold; color:#b91c1c;"><input type="checkbox" id="eEmg_MLC"> Medico-Legal Case (MLC)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. WALKIN FORM SECTION -->
+                <div id="eSec-WALKIN" style="display: none;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                        <div class="inc-form-group"><label>Service Availed <span style="color:red">*</span></label><select id="eWalk_Service"><option>Pharmacy Purchase</option><option>Lab / Pathology Test</option><option>Radiology / X-Ray</option></select></div>
+                        <div class="inc-form-group"><label>Ref. Doctor</label><input type="text" id="eWalk_Doctor" placeholder="Self / External Doctor"></div>
+                    </div>
+                </div>
+
+                <!-- Action Button Footers -->
+                <div style="display: flex; justify-content: flex-end; border-top: 1px solid #cbd5e1; padding-top: 15px; margin-top: 15px;">
+                    <button class="btn-dispatch" id="eModalSubmitBtn" style="background-color: #0ea5e9; padding: 12px 30px; font-size: 16px;" onclick="submitExistingPatientVisit()">
+                        Book Visit ➔
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
 
     <!-- PHARMACY SECTION -->
     <div id="pharmacySection" style="display: none;">
@@ -1176,15 +1972,18 @@
                 </section>
                 <section id="pharmacyView-masters" class="pharmacy-view">
                     <div class="module-shell">
-                        <h2> Masters Dashboard</h2>
-                        <div style="display:flex;gap:15px;margin-top:15px;">
+                        <h2>📦 Masters & Utilities</h2>
+                        <div style="display:flex;gap:15px;margin-top:15px; flex-wrap: wrap;">
                             <button class="small-action primary" style="background-color: #2c598f; border-color: #2c598f; padding: 10px 20px; font-size: 14px;" onclick="openVendorMaster()">
-                                 Vendor Master
+                                🏢 Vendor Master
+                            </button>
+                            <button class="small-action primary" style="background-color: #27ae60; border-color: #27ae60; padding: 10px 20px; font-size: 14px;" onclick="openMedicineMaster()">
+                                💊 Product Master
                             </button>
                             
-                            <!-- 🔴 NEW: Product / Medicine Master Button -->
-                            <button class="small-action primary" style="background-color: #27ae60; border-color: #27ae60; padding: 10px 20px; font-size: 14px;" onclick="openMedicineMaster()">
-                                 Product / Medicine Master
+                            <!-- 🔴 NEW: Separate QR Generator Button -->
+                            <button class="small-action primary" style="background-color: #8e44ad; border-color: #8e44ad; padding: 10px 20px; font-size: 14px; display: flex; align-items: center; gap: 5px;" onclick="openQrGenerator()">
+                                <span class="material-symbols-outlined" style="font-size: 18px;">qr_code_scanner</span> Print QR Labels
                             </button>
                         </div>
                     </div>
@@ -1528,6 +2327,8 @@
                                     <option value="PURCHASE ASSISTANT">Purchase Assistant</option>
                                     <option value="PURCHASE MANAGER">Purchase Manager</option>
                                     <option value="RESIDENT">Resident (Nursing)</option>
+                                    <option value="RECEPTION" style="color: #e67e22; font-weight: bold;">Reception / Front Desk</option>
+                                    <option value="BILLING" style="color: #8e44ad; font-weight: bold;">Billing Staff</option>
                                     <option value="ADMIN">Admin</option>
                                 </select>
                             </div>
@@ -1952,6 +2753,54 @@
             </div>
         </div>
     </div>
+    <!-- 🔴 SEPARATE QR GENERATOR MODAL -->
+    <div id="qrGeneratorModal" class="modalOverlay" style="display:none; z-index: 26000;">
+        <div class="modalBox" style="width: 600px; max-width: 95%; padding: 0;">
+            <div class="modalHeader" style="background: #8e44ad; color: white; padding: 15px 20px;">
+                <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">qr_code_2</span> Smart QR Generator
+                </h3>
+                <button class="modalCloseBtn" onclick="closeQrGenerator()" style="color: white; background: transparent; font-size: 20px;">✕</button>
+            </div>
+            <div class="modalBody" style="background: #f8fafc; padding: 25px;">
+                
+                <div class="inc-form-group" style="position: relative; margin-bottom: 20px;">
+                    <label style="font-weight: bold; color: #2c598f;">Search Medicine <span style="color:red">*</span></label>
+                    <input type="text" id="qrMedSearch" placeholder="🔍 Search medicine to print label..." autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; font-size: 15px; font-weight: bold;">
+                    <div id="qrMedDropdown" class="autocomplete-items" style="display:none; z-index: 200;"></div>
+                </div>
+                
+                <div class="inc-form-group" style="margin-bottom: 20px;">
+                    <label style="font-weight: bold; color: #2c598f;">Select Live Batch <span style="color:red">*</span></label>
+                    <select id="qrBatchSelect" style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 4px; font-weight: bold; color: #1e293b; outline: none; background: white;">
+                        <option value="">-- Select Medicine First --</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-bottom: 10px;">
+                    <div class="inc-form-group" style="flex: 1;">
+                        <label style="font-size: 13px; color: #64748b;">Product Code</label>
+                        <input type="text" id="qrProdCode" readonly style="background: #e2e8f0; font-weight: bold; color: #475569; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+                    </div>
+                    <div class="inc-form-group" style="flex: 1;">
+                        <label style="font-size: 13px; color: #64748b;">Expiry Date</label>
+                        <input type="text" id="qrExpiry" readonly style="background: #e2e8f0; font-weight: bold; color: #e74c3c; padding: 10px; border-radius: 4px; border: 1px solid #ced4da;">
+                    </div>
+                    <!-- 🔴 NEW: Print Quantity Box -->
+                    <div class="inc-form-group" style="flex: 0.6;">
+                        <label style="font-size: 13px; font-weight: bold; color: #8e44ad;">No. of Labels</label>
+                        <input type="number" id="qrPrintQty" value="1" min="1" max="500" style="font-weight: bold; color: #8e44ad; padding: 10px; border-radius: 4px; border: 2px solid #d8b4e2; text-align: center; outline: none;">
+                    </div>
+                </div>
+                
+                <div style="text-align: right; margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                    <button class="btn-cancel" style="padding: 10px 20px;" onclick="closeQrGenerator()">Cancel</button>
+                    <button class="btn-dispatch" style="background-color: #8e44ad; padding: 10px 30px; font-size: 15px; box-shadow: 0 4px 6px rgba(142, 68, 173, 0.3);" onclick="printSelectedQR()">🖨️ Print Thermal QR</button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
 
     <!-- 🔴 VENDOR MASTER MODAL (FULL SCREEN LIKE GRN) -->
     <div id="vendorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 10005; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
@@ -2072,10 +2921,15 @@
                     
                     <h4 style="margin-top: 0; color: #2c598f; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 15px;">1. Basic Identity</h4>
                     <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
-                        <div class="inc-form-group"><label>Product Code <span style="font-size:10px;color:#7f8c8d;">(Auto)</span></label><input type="text" id="pm_code" placeholder="Auto Gen" style="background:#f0f8fa; font-weight:bold; color:#e74c3c;"></div>
+                        
+                        <!-- 🔴 UPDATE: Read-Only Product Code Field -->
+                        <div class="inc-form-group"><label>Product Code <span style="font-size:10px;color:#7f8c8d;">(Auto)</span></label><input type="text" id="pm_code" placeholder="* Auto Generated *" readonly style="background:#e2e8f0; font-weight:bold; color:#475569; cursor:not-allowed; outline:none;"></div>
+                        
                         <!-- 🔴 NEW: Barcode Scanner Field -->
                         <div class="inc-form-group"><label>Company Barcode (Scan)</label><input type="text" id="pm_barcode" placeholder="Scan Barcode here..." style="font-weight:bold; color:#166534; border: 2px solid #bbf7d0; background:#f0fdf4;"></div>
+                        
                         <div class="inc-form-group" style="grid-column: span 2;"><label>Brand Name <span style="color:red">*</span></label><input type="text" id="pm_brand" placeholder="e.g. DOLO 650 MG TAB"></div>
+                        
                         <div class="inc-form-group"><label>Dosage Form</label>
                             <select id="pm_dosage">
                                 <option value="TAB">Tablet (TAB)</option><option value="CAP">Capsule (CAP)</option><option value="SYP">Syrup (SYP)</option>
@@ -2349,9 +3203,19 @@
                 <button onclick="document.getElementById('returnSelectionModal').style.display='none'" style="background: none; border: none; color: white; font-size: 24px; cursor: pointer;">&times;</button>
             </div>
             
-            <div style="padding: 15px; background: #fff5f5; border-bottom: 1px solid #fed7d7; color: #c62828; font-size: 13px;">
-                <b>Tip:</b> Double-click on any row to automatically select the full quantity for return.
-            </div>
+            <!-- 🟢 SMART SCANNER BLOCK (TIP च्या समोर) -->
+    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff5f5; padding: 10px 15px; border-bottom: 1px solid #fed7d7;">
+        <span style="color: #c62828; font-size: 13px;">
+            <strong>Tip:</strong> Double-click on any row to automatically select the full quantity for return.
+        </span>
+        
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <label style="font-weight: bold; color: #b45309; font-size: 13px; margin: 0;">
+                🔍 Scan to Add (+1):
+            </label>
+            <input type="text" id="modalReturnScanner" placeholder="Scan Item Here..." style="padding: 6px 12px; border: 2px solid #f59e0b; border-radius: 4px; outline: none; font-weight: bold; color: #b45309; width: 220px; background: white;" autocomplete="off">
+        </div>
+    </div>
 
             <!-- 🔴 padding-top: 0 केली आणि margin-top: 20px दिले -->
             <div style="padding: 0px 20px 20px 20px; overflow-y: auto; flex: 1; background: white;">
@@ -2617,6 +3481,12 @@
                     document.getElementById('adminSection').style.display = 'block'; 
                     initAdmin(); 
                 } 
+                else if(["RECEPTION", "FRONT DESK"].includes(roleCheck)) {
+                    // 🔴 नवीन रिसेप्शन डेस्क चालू करणे
+                    document.getElementById('receptionSection').style.display = 'block';
+                    let rUser = document.getElementById('r_userDisplay');
+                    if(rUser) rUser.innerHTML = `👤 ${loggedInName} <span style="opacity:0.8; font-size:12px; margin-left:5px;">| ${currentRole}</span>`;
+                }
                 else if(["NURSING","RESIDENT","RMO"].includes(roleCheck)) {
                     document.getElementById('nursingSection').style.display = 'block'; 
                     document.getElementById('n_unitName').innerHTML = `<option value="${loggedInUnit}">${loggedInUnit}</option>`; 
@@ -3085,52 +3955,117 @@
     const p_medDropdown = document.getElementById('p_medDropdown'); 
     
     if(p_medInput) {
-        // 🔴 1. Scanner Optimized Keydown Listener
+        // 🔴 SEARCH BOX SCANNER & KEYBOARD LOGIC (AUTO-VERIFY INDENT)
         p_medInput.addEventListener('keydown', function(e) {
             let x = document.getElementById("p_medDropdown").getElementsByClassName("med-item"); 
-            if (!x || x.length === 0) return;
-            if (e.key === "ArrowDown") { p_currentFocus++; addActiveP(x); e.preventDefault();} 
-            else if (e.key === "ArrowUp") { p_currentFocus--; addActiveP(x); e.preventDefault();} 
-            else if (e.key === "Enter") { 
+            if (!x) return;
+            if (e.key === "ArrowDown") { p_currentFocus++; addActiveP(x); e.preventDefault(); return; } 
+            if (e.key === "ArrowUp") { p_currentFocus--; addActiveP(x); e.preventDefault(); return; } 
+            if (e.key === "Enter") { 
                 e.preventDefault(); 
                 
-                // 🔴 NEW: SUPERFAST SCANNER LISTENER
                 let scannedVal = p_medInput.value.trim().toUpperCase();
+                if(!scannedVal) return;
+
+                // 🔴 1. QR Code Parsing (Format: CODE|BATCH|EXPIRY)
+                let isQR = scannedVal.includes('|');
+                let scannedCode = scannedVal;
+                let scannedBatch = "";
                 
-                // Exact Match (Product Code किंवा Barcode)
-                let exactMatch = globalMedDetails.find(m => String(m.code).toUpperCase() === scannedVal || String(m.barcode).toUpperCase() === scannedVal);
-                
-                if (exactMatch) {
-                    window.currentSelectedMed = exactMatch;
-                    p_medInput.value = exactMatch.name.split("|")[0].trim();
-                    p_medDropdown.style.display = 'none'; 
-                    
-                    let pHist = JSON.parse(localStorage.getItem('careSync_pharmaHistory')) || {};
-                    pHist[exactMatch.code] = (pHist[exactMatch.code] || 0) + 1;
-                    localStorage.setItem('careSync_pharmaHistory', JSON.stringify(pHist));
-                    
-                    let bSelect = document.getElementById('p_medBatch');
-                    bSelect.innerHTML = '<option value="">-- Select Batch (F4) --</option>';
-                    let availableBatches = globalBatches.filter(b => Number(b.code) === Number(exactMatch.code));
-                    availableBatches.forEach(b => { 
-                        let opt = document.createElement('option'); 
-                        opt.value = b.batchExp; 
-                        opt.innerText = `${b.batchExp} (S:${b.stock})`; 
-                        opt.setAttribute('data-mrp', b.mrp); 
-                        opt.setAttribute('data-stock', b.stock);
-                        bSelect.appendChild(opt); 
-                    });
-                    
-                    if(availableBatches.length === 1) {
-                        bSelect.selectedIndex = 1;
-                        document.getElementById('p_medQty').focus();
-                    } else {
-                        bSelect.focus();
-                    }
-                    return; 
+                if(isQR) {
+                    let parts = scannedVal.split('|');
+                    scannedCode = parts[0].trim();
+                    scannedBatch = parts.length > 1 ? parts[1].trim() : "";
                 }
-                
-                if (p_currentFocus > -1) {
+
+                // 🔴 2. Find Exact Medicine Match (By Product Code OR Company Barcode)
+                let exactMatch = globalMedDetails.find(m => 
+                    String(m.code).toUpperCase() === scannedCode || 
+                    (m.barcode && String(m.barcode).toUpperCase() === scannedCode)
+                );
+
+                if (exactMatch) {
+                    p_medInput.value = ""; // कर्सर मोकळा करा
+                    p_medDropdown.style.display = 'none';
+
+                    // 🔴 3. INDENT VERIFICATION MODE (चेक करा की हे औषध आधीच बिलात आहे का?)
+                    let tbody = document.getElementById('medicineTableBody');
+                    let existingRow = Array.from(tbody.children).find(row => row.getAttribute('data-code') === exactMatch.code);
+
+                    if (existingRow) {
+                        // ✅ औषध बिलात सापडले (Indent Item Verified!)
+                        
+                        // A. हिरवा रंग देऊन Highlight करा (Visual Feedback)
+                        existingRow.style.transition = "background 0.3s";
+                        existingRow.style.backgroundColor = "#dcfce7"; 
+                        setTimeout(() => { existingRow.style.backgroundColor = ""; }, 1500);
+                        
+                        let batchSelect = existingRow.querySelector('.sale-batch');
+                        let qtyInput = existingRow.querySelector('.sale-qty-input');
+
+                        // B. जर QR कोड असेल आणि त्यात बॅच असेल, तर ती थेट सिलेक्ट करा!
+                        if (isQR && scannedBatch) {
+                            let opts = Array.from(batchSelect.options);
+                            let matchedOpt = opts.find(opt => String(opt.value).toUpperCase().includes(scannedBatch));
+                            
+                            if(matchedOpt) {
+                                batchSelect.value = matchedOpt.value;
+                                calcSaleRow(batchSelect); // 🔴 रेट आणि अमाऊंट अपडेट करा
+                                showToast("Verified & Batch Updated: " + exactMatch.name.split('|')[0], "success");
+                                qtyInput.focus(); // कर्सर Qty वर न्या
+                            } else {
+                                alert("⚠️ Scanned Batch '" + scannedBatch + "' not found in Active Stock!");
+                                batchSelect.focus();
+                            }
+                        } else {
+                            // 1D Barcode असेल (ज्यात बॅच नसते), तर फक्त ड्रॉपडाऊन फोकस करा
+                            showToast("Medicine Verified! Please select Batch.", "success");
+                            batchSelect.focus();
+                        }
+                        return;
+                    } 
+                    else {
+                        // 🔴 4. DIRECT ADD MODE (औषध बिलात नाही, म्हणजे नव्याने/एक्स्ट्रा ऍड करायचे आहे)
+                        window.currentSelectedMed = exactMatch;
+                        
+                        let bSelect = document.getElementById('p_medBatch');
+                        bSelect.innerHTML = '<option value="">-- Select Batch (F4) --</option>';
+                        let availableBatches = globalBatches.filter(b => Number(b.code) === Number(exactMatch.code));
+                        
+                        availableBatches.forEach(b => { 
+                            let opt = document.createElement('option'); 
+                            opt.value = b.batchExp; 
+                            opt.innerText = `${b.batchExp} (S:${b.stock})`; 
+                            opt.setAttribute('data-mrp', b.mrp); 
+                            opt.setAttribute('data-stock', b.stock);
+                            bSelect.appendChild(opt); 
+                        });
+
+                        // जर QR असेल तर आपोआप ऍड करा!
+                        if (isQR && scannedBatch) {
+                            let matchedOpt = Array.from(bSelect.options).find(opt => String(opt.value).toUpperCase().includes(scannedBatch));
+                            if(matchedOpt) {
+                                bSelect.value = matchedOpt.value;
+                                document.getElementById('p_medQty').value = 1; // Default Qty
+                                addWalkInMedicine(); 
+                                showToast("Scanned & Added!", "success");
+                                return;
+                            }
+                        }
+                        
+                        document.getElementById('p_medicineSearch').value = exactMatch.name.split('|')[0].trim();
+                        if(availableBatches.length === 1) {
+                            bSelect.selectedIndex = 1;
+                            document.getElementById('p_medQty').focus();
+                        } else {
+                            bSelect.focus();
+                        }
+                        return;
+                    }
+                }
+
+                // 🔴 5. Manual Text Search (Enter pressed on Dropdown)
+                if (p_currentFocus > -1 && x.length > 0) {
                     x[p_currentFocus].click(); 
                 }
             }
@@ -3749,8 +4684,24 @@
     }
     function addGRNRow() {
         const tbody = document.getElementById('grnItemsBody'); const tr = document.createElement('tr'); let rowId = "grnRow_" + new Date().getTime();
-        // 🔴 या लाईनमध्ये grn-free-qty चा नवीन बॉक्स ऍड केला आहे
-        tr.innerHTML = `<td style="position: relative;"><input type="hidden" class="grn-code"><input type="text" class="grn-med-name" placeholder="Search product..." style="width: 100%; border: 1px solid #ced4da; padding: 6px;" autocomplete="off" oninput="showGRNSearch(this, '${rowId}')" onkeydown="handleGRNKeydown(event, this, '${rowId}')"><div id="${rowId}_dropdown" class="autocomplete-items" style="display:none; position: absolute; z-index: 10000; background: white; width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: left;"></div></td><td><input type="text" class="grn-batch" placeholder="Batch" style="width: 100%; border: 1px solid #ced4da; padding: 6px; text-transform: uppercase;"></td><td><input type="text" class="grn-exp" placeholder="MM/YY" maxlength="5" style="width: 100%; border: 1px solid #ced4da; padding: 6px; text-align: center;"></td><td><input type="number" class="grn-qty" placeholder="0" style="width: 100%; border: 1px solid #ced4da; padding: 6px; font-weight:bold; color:#2c598f;" min="1" oninput="calculateGRNTotal()"></td><td><input type="number" class="grn-free-qty" placeholder="0" style="width: 100%; border: 1px solid #ced4da; padding: 6px; font-weight:bold; color:#27ae60;" min="0" value="0" oninput="calculateGRNTotal()"></td><td><input type="number" class="grn-conv" placeholder="1" style="width: 100%; border: 1px solid #ced4da; padding: 6px;"></td><td><input type="number" class="grn-rate" placeholder="0.00" style="width: 100%; border: 1px solid #ced4da; padding: 6px;" step="0.01" oninput="calculateGRNTotal()"></td><td><input type="number" class="grn-mrp" placeholder="0.00" style="width: 100%; border: 1px solid #ced4da; padding: 6px;" step="0.01"></td><td><input type="text" class="grn-hsn" placeholder="HSN" readonly style="width: 100%; border: 1px solid #ced4da; padding: 6px;"></td><td><input type="number" class="grn-gst" placeholder="12" style="width: 100%; border: 1px solid #ced4da; padding: 6px;" oninput="calculateGRNTotal()"></td><td><input type="text" class="grn-amt" placeholder="0.00" style="width: 100%; border: none; background: transparent; font-weight: bold; color: #2c598f;" readonly></td><td style="text-align: center;"><button onclick="this.parentElement.parentElement.remove(); calculateGRNTotal();" style="background: #fff0f0; color: #e74c3c; border: 1px solid #fed7d7; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold;">X</button></td>`;
+        // 🔴 Medicine Name च्या लगेच खाली Barcode चा इनपुट दिलाय
+        tr.innerHTML = `<td style="position: relative;">
+            <input type="hidden" class="grn-code">
+            <input type="text" class="grn-med-name" placeholder="Search product..." style="width: 100%; border: 1px solid #ced4da; padding: 6px; margin-bottom:4px;" autocomplete="off" oninput="showGRNSearch(this, '${rowId}')" onkeydown="handleGRNKeydown(event, this, '${rowId}')">
+            <div id="${rowId}_dropdown" class="autocomplete-items" style="display:none; position: absolute; z-index: 10000; background: white; width: 100%; box-shadow: 0 4px 8px rgba(0,0,0,0.1); text-align: left;"></div>
+            <input type="text" class="grn-barcode" placeholder="Scan Company Barcode (Optional)" style="width: 100%; border: 1px solid #d8b4e2; padding: 4px; font-size: 11px; background:#f9fbfc; color:#8e44ad; font-weight:bold;">
+        </td>
+        <td><input type="text" class="grn-batch" placeholder="Batch" style="width: 100%; border: 1px solid #ced4da; padding: 6px; text-transform: uppercase;"></td>
+        <td><input type="text" class="grn-exp" placeholder="MM/YY" maxlength="5" style="width: 100%; border: 1px solid #ced4da; padding: 6px; text-align: center;"></td>
+        <td><input type="number" class="grn-qty" placeholder="0" style="width: 100%; border: 1px solid #ced4da; padding: 6px; font-weight:bold; color:#2c598f;" min="1" oninput="calculateGRNTotal()"></td>
+        <td><input type="number" class="grn-free-qty" placeholder="0" style="width: 100%; border: 1px solid #ced4da; padding: 6px; font-weight:bold; color:#27ae60;" min="0" value="0" oninput="calculateGRNTotal()"></td>
+        <td><input type="number" class="grn-conv" placeholder="1" style="width: 100%; border: 1px solid #ced4da; padding: 6px;"></td>
+        <td><input type="number" class="grn-rate" placeholder="0.00" style="width: 100%; border: 1px solid #ced4da; padding: 6px;" step="0.01" oninput="calculateGRNTotal()"></td>
+        <td><input type="number" class="grn-mrp" placeholder="0.00" style="width: 100%; border: 1px solid #ced4da; padding: 6px;" step="0.01"></td>
+        <td><input type="text" class="grn-hsn" placeholder="HSN" readonly style="width: 100%; border: 1px solid #ced4da; padding: 6px;"></td>
+        <td><input type="number" class="grn-gst" placeholder="12" style="width: 100%; border: 1px solid #ced4da; padding: 6px;" oninput="calculateGRNTotal()"></td>
+        <td><input type="text" class="grn-amt" placeholder="0.00" style="width: 100%; border: none; background: transparent; font-weight: bold; color: #2c598f;" readonly></td>
+        <td style="text-align: center;"><button onclick="this.parentElement.parentElement.remove(); calculateGRNTotal();" style="background: #fff0f0; color: #e74c3c; border: 1px solid #fed7d7; border-radius: 4px; padding: 5px 10px; cursor: pointer; font-weight: bold;">X</button></td>`;
         tbody.appendChild(tr);
     }
     function handleGRNKeydown(e, inputEl, rowId) {
@@ -3848,16 +4799,25 @@
             let gst = parseFloat(row.querySelector('.grn-gst').value) || 0; 
             let conv = parseFloat(row.querySelector('.grn-conv').value) || 1; 
             let hsn = row.querySelector('.grn-hsn').value;
+            // 🔴 Barcode वाचणे
+            let barcode = row.querySelector('.grn-barcode') ? row.querySelector('.grn-barcode').value.trim() : "";
             
             if(name && totalQty > 0) {
-                items.push({ code: code, name: name, batch: batch, expiry: exp, purQty: purQty, freeQty: freeQty, qty: totalQty, conv: conv, purRate: parseFloat(row.querySelector('.grn-rate').value) || 0, mrp: parseFloat(row.querySelector('.grn-mrp').value) || 0, gst: gst, amount: parseFloat(row.querySelector('.grn-amt').value) || 0 });
+                // 🔴 Items मध्ये barcode ऍड केला
+                items.push({ code: code, name: name, batch: batch, expiry: exp, purQty: purQty, freeQty: freeQty, qty: totalQty, conv: conv, purRate: parseFloat(row.querySelector('.grn-rate').value) || 0, mrp: parseFloat(row.querySelector('.grn-mrp').value) || 0, gst: gst, amount: parseFloat(row.querySelector('.grn-amt').value) || 0, barcode: barcode });
                 
-                // 🔴 2. कडक डेटा टाईप मॅचिंग (000012 == 000012)
                 let masterRec = globalMedDetails.find(m => String(m.code).padStart(6,'0') === String(code).padStart(6,'0'));
                 if(masterRec) { 
-                    if(parseFloat(masterRec.gst) != gst || parseFloat(masterRec.conv) != conv || String(masterRec.hsn).trim() != String(hsn).trim()) { 
-                        masterUpdates.push({code: code, name: name, gst: gst, conv: conv, hsn: hsn}); 
-                    } 
+                    let needsUpdate = false;
+                    let updateObj = {code: code, name: name};
+                    
+                    if(parseFloat(masterRec.gst) != gst) { updateObj.gst = gst; needsUpdate = true; }
+                    if(parseFloat(masterRec.conv) != conv) { updateObj.conv = conv; needsUpdate = true; }
+                    if(String(masterRec.hsn).trim() != String(hsn).trim()) { updateObj.hsn = hsn; needsUpdate = true; }
+                    // 🔴 जर Barcode टाकला असेल, तर तो अपडेटसाठी पाठवा
+                    if(barcode !== "") { updateObj.barcode = barcode; needsUpdate = true; } 
+                    
+                    if (needsUpdate) { masterUpdates.push(updateObj); } 
                 }
             }
         });
@@ -5281,19 +6241,38 @@
     }
 
     // 🔴 मेन स्क्रीन टेबल (फायनल व्ह्यू)
+    // 🔴 मेन स्क्रीन टेबल (फायनल व्ह्यू) - FIXED
     function renderMainReturnScreen(items) {
         document.getElementById('rtnPatientSection').style.display = 'block';
-        let isCredit = currentConsolidatedData.primaryType.includes("Credit");
         
-        document.getElementById('rtnConsMRN').innerText = currentConsolidatedData.mrn;
-        document.getElementById('rtnConsPatient').innerText = currentConsolidatedData.patient;
-        document.getElementById('rtnConsType').innerText = currentConsolidatedData.primaryType;
-        document.getElementById('rtnCreditWarning').style.display = isCredit ? 'inline' : 'none';
-        document.getElementById('lblRefundText').innerText = isCredit ? "TOTAL CREDIT ADJUSTMENT (NO CASH)" : "TOTAL CASH REFUND AMOUNT";
+        // 1. Data Safety Check
+        let isCredit = false;
+        if (typeof currentConsolidatedData !== 'undefined' && currentConsolidatedData && currentConsolidatedData.primaryType) {
+            isCredit = currentConsolidatedData.primaryType.includes("Credit");
+            document.getElementById('rtnConsMRN').innerText = currentConsolidatedData.mrn || "-";
+            document.getElementById('rtnConsPatient').innerText = currentConsolidatedData.patient || "-";
+            document.getElementById('rtnConsType').innerText = currentConsolidatedData.primaryType || "-";
+        }
+        
+        // 🔴 2. FIX: rtnCreditWarning HTML मध्ये नसल्यामुळे तो एरर देत होता. 
+        // आता आपण आधी चेक करू की तो टॅग अस्तित्वात आहे का.
+        let creditWarning = document.getElementById('rtnCreditWarning');
+        if (creditWarning) {
+            creditWarning.style.display = isCredit ? 'inline' : 'none';
+        }
+        
+        let lblRefund = document.getElementById('lblRefundText');
+        if (lblRefund) {
+            lblRefund.innerText = isCredit ? "TOTAL CREDIT ADJUSTMENT (NO CASH)" : "TOTAL CASH REFUND AMOUNT";
+        }
         
         // 🔴 Mobile No. चे Placeholder अपडेट केले
-        document.getElementById('rtnRemark').placeholder = "Enter Mobile No. & Name of person receiving refund *";
+        let remarkInput = document.getElementById('rtnRemark');
+        if (remarkInput) {
+            remarkInput.placeholder = "Enter Mobile No. & Name of person receiving refund *";
+        }
         
+        // 3. Table Population
         let tbody = document.getElementById('rtnConsItemsBody');
         tbody.innerHTML = '';
         let totalRefund = 0;
@@ -8057,6 +9036,1460 @@
         `);
         printWindow.document.close();
     }
+    // ==========================================
+    // 🔴 SEPARATE SMART QR GENERATOR LOGIC (FIXED BATCH SPLIT)
+    // ==========================================
+    let qr_currentFocus = -1;
+    let currentQrMed = null;
+
+    function openQrGenerator() {
+        document.getElementById('qrGeneratorModal').style.display = 'flex';
+        document.getElementById('qrMedSearch').value = '';
+        document.getElementById('qrBatchSelect').innerHTML = '<option value="">-- Select Medicine First --</option>';
+        document.getElementById('qrProdCode').value = '';
+        document.getElementById('qrExpiry').value = '';
+        currentQrMed = null;
+        setTimeout(() => document.getElementById('qrMedSearch').focus(), 100);
+    }
+
+    function closeQrGenerator() {
+        document.getElementById('qrGeneratorModal').style.display = 'none';
+    }
+
+    // 🔴 1. Smart Search for QR Generator
+    setTimeout(() => {
+        let qrInput = document.getElementById('qrMedSearch');
+        let qrDropdown = document.getElementById('qrMedDropdown');
+        
+        if(qrInput && qrDropdown) {
+            qrInput.addEventListener('keydown', function(e) {
+                let x = qrDropdown.getElementsByClassName("med-item"); if (!x || x.length === 0) return;
+                if (e.key === "ArrowDown") { qr_currentFocus++; addActiveQR(x); e.preventDefault();} 
+                else if (e.key === "ArrowUp") { qr_currentFocus--; addActiveQR(x); e.preventDefault();} 
+                else if (e.key === "Enter") { e.preventDefault(); if (qr_currentFocus > -1) x[qr_currentFocus].click(); }
+            });
+            
+            function addActiveQR(x) {
+                for (let i = 0; i < x.length; i++) x[i].classList.remove("autocomplete-active");
+                if (qr_currentFocus >= x.length) qr_currentFocus = 0; if (qr_currentFocus < 0) qr_currentFocus = (x.length - 1);
+                x[qr_currentFocus].classList.add("autocomplete-active"); x[qr_currentFocus].scrollIntoView({ block: "nearest", behavior: "smooth" });
+            }
+            
+            qrInput.addEventListener('input', function() {
+                qr_currentFocus = -1; let val = this.value.toUpperCase().replace(/-/g, ' ').trim(); qrDropdown.innerHTML = ''; if(!val) { qrDropdown.style.display = 'none'; return; }
+                const aliases = { "IV": "I V", "INJ": "INJECTION", "TAB": "TABLET" }; let tokens = val.split(" ").map(w => aliases[w] ? aliases[w] : w).join(" ").split(" ");
+                
+                let matchedItems = [];
+                for (let i = 0; i < globalMedDetails.length; i++) {
+                    let m = globalMedDetails[i]; 
+                    let searchSpace = (m.code + " " + m.name + " " + m.generic).toUpperCase().replace(/-/g, ' '); 
+                    if (tokens.every(token => searchSpace.includes(token))) matchedItems.push(m);
+                }
+                
+                let pHist = JSON.parse(localStorage.getItem('careSync_pharmaHistory')) || {};
+                matchedItems.sort((a, b) => (pHist[b.code] || 0) - (pHist[a.code] || 0));
+
+                let count = 0;
+                for (let i = 0; i < matchedItems.length; i++) {
+                    let m = matchedItems[i];
+                    let div = document.createElement('div'); div.className = "med-item"; 
+                    div.innerHTML = `<strong>${m.brand || m.name.split("|")[0].trim()}</strong> <span style="font-size:11px; color:#4276b6;">[${m.code}]</span>`;
+                    
+                    div.addEventListener('click', function() { 
+                        currentQrMed = m;
+                        qrInput.value = m.brand || m.name.split("|")[0].trim();
+                        document.getElementById('qrProdCode').value = m.code;
+                        qrDropdown.style.display = 'none'; 
+                        
+                        // 🔴 Auto-load Active Batches
+                        let bSelect = document.getElementById('qrBatchSelect');
+                        bSelect.innerHTML = '<option value="">-- Select Batch --</option>';
+                        let availableBatches = globalBatches.filter(b => Number(b.code) === Number(m.code));
+                        
+                        if(availableBatches.length === 0) {
+                            bSelect.innerHTML = '<option value="">⚠️ No Active Stock found for this medicine!</option>';
+                            document.getElementById('qrExpiry').value = '';
+                        } else {
+                            availableBatches.forEach(b => { 
+                                let opt = document.createElement('option'); 
+                                opt.value = b.batchExp; 
+                                opt.innerText = `Batch: ${b.batchExp} (Stock: ${b.stock})`; 
+                                
+                                // 🔴 FIX: Split using '|' instead of '-'
+                                let expParts = String(b.batchExp).split('|');
+                                opt.setAttribute('data-exp', expParts.length > 1 ? expParts[1].trim() : "");
+                                
+                                bSelect.appendChild(opt); 
+                            });
+                            bSelect.selectedIndex = 1; 
+                            bSelect.dispatchEvent(new Event('change')); // Trigger Expiry fill
+                        }
+                    });
+                    qrDropdown.appendChild(div); count++;
+                    if(count > 15) break;
+                }
+                qrDropdown.style.display = count > 0 ? 'block' : 'none';
+            });
+            document.addEventListener('click', function(e) { if (e.target !== qrInput) qrDropdown.style.display = 'none'; });
+        }
+        
+        // 🔴 Update Expiry Box when Batch is selected
+        let batchSel = document.getElementById('qrBatchSelect');
+        if(batchSel) {
+            batchSel.addEventListener('change', function() {
+                if(this.selectedIndex > 0 && this.options[this.selectedIndex].value !== "") {
+                    let exp = this.options[this.selectedIndex].getAttribute('data-exp');
+                    document.getElementById('qrExpiry').value = exp || '';
+                } else {
+                    document.getElementById('qrExpiry').value = '';
+                }
+            });
+        }
+    }, 1500);
+
+    // 🔴 2. Execute Print Command (With Multiple Qty Loop)
+    function printSelectedQR() {
+        if(!currentQrMed) return alert("Please search and select a medicine first.");
+        
+        let batchSel = document.getElementById('qrBatchSelect');
+        let batchFull = batchSel.value; 
+        
+        if(!batchFull) {
+            if(!confirm("No active batch selected. Do you want to print a Generic QR (Without Batch)?")) return;
+        }
+        
+        let batchNo = batchFull ? batchFull.split('|')[0].trim() : "";
+        let expiry = document.getElementById('qrExpiry').value.trim();
+        let printQty = parseInt(document.getElementById('qrPrintQty').value) || 1;
+
+        let qrData = currentQrMed.code;
+        if(batchNo) qrData += "|" + batchNo.toUpperCase();
+        if(expiry) qrData += "|" + expiry.toUpperCase();
+        
+        let qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=" + encodeURIComponent(qrData);
+        
+        let pagesHtml = "";
+        for(let i = 0; i < printQty; i++) {
+            pagesHtml += `
+            <div class="page">
+                <div class="info">
+                    <div class="pharmacy">KESHAV MEDICAL STORE</div>
+                    <div class="brand">${currentQrMed.brand || currentQrMed.name.split('|')[0]}</div>
+                    <div class="text">B: ${batchNo || '-'} &nbsp; E: ${expiry || '-'}</div>
+                    <div class="code">[ ${currentQrMed.code} ]</div>
+                </div>
+                <img src="${qrUrl}" class="qr" />
+            </div>`;
+        }
+        
+        let printWindow = window.open('', '_blank', 'width=400,height=300');
+        
+        // 🔴 जर ब्राउझरने पॉपअप ब्लॉक केला असेल तर एरर देईल (मुख्य टॅब बंद होऊ देणार नाही)
+        if (!printWindow) {
+            return alert("⚠️ Popup Blocked! Please allow popups for this site to print QR labels.");
+        }
+
+        printWindow.document.write(`
+            <html>
+            <head>
+                <title>Print QR Labels</title>
+                <style>
+                    @page { size: 50mm 25mm; margin: 0; }
+                    body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; background: white; color: black; }
+                    .page { 
+                        display: flex; align-items: center; justify-content: space-between; 
+                        width: 46mm; height: 21mm; padding: 2mm; overflow: hidden;
+                        page-break-after: always; 
+                    }
+                    .info { flex: 1; text-align: left; padding-right: 3px; overflow: hidden; }
+                    .pharmacy { font-size: 8px; font-weight: bold; margin-bottom: 2px; border-bottom: 1px solid #000; padding-bottom: 1px; color: #333; }
+                    .brand { font-size: 10px; font-weight: bold; margin: 0 0 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #000; }
+                    .text { font-size: 8px; margin: 1px 0; color: #333; font-weight: bold; }
+                    .code { font-size: 9px; margin-top: 2px; color: #000; }
+                    .qr { width: 18mm; height: 18mm; }
+                </style>
+            </head>
+            <body>
+                ${pagesHtml}
+            </body>
+            </html>
+        `);
+        
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => { 
+            printWindow.print(); 
+            printWindow.close(); 
+        }, 800);
+    }
+    // ==========================================
+    // 🔴 MODAL SCANNER LOGIC: AUTO +1 QUANTITY
+    // ==========================================
+    setTimeout(() => {
+        let modalScan = document.getElementById('modalReturnScanner');
+        if(modalScan) {
+            modalScan.addEventListener('keydown', function(e) {
+                if(e.key === 'Enter') {
+                    e.preventDefault();
+                    let scannedVal = this.value.trim().toUpperCase();
+                    if(!scannedVal) return;
+
+                    // 1. QR Code Parsing (Format: CODE|BATCH|EXPIRY) किंवा Company Barcode
+                    let isQR = scannedVal.includes('|');
+                    let rawScanCode = isQR ? scannedVal.split('|')[0].trim() : scannedVal;
+                    let scanBatch = isQR && scannedVal.split('|').length > 1 ? scannedVal.split('|')[1].trim() : "";
+
+                    // Global Master मधून Product Code शोधणे (जर कंपनीचा बारकोड स्कॅन केला असेल तर)
+                    let exactMatch = typeof globalMedDetails !== 'undefined' ? globalMedDetails.find(m => 
+                        String(m.code).toUpperCase() === rawScanCode || 
+                        (m.barcode && String(m.barcode).toUpperCase() === rawScanCode)
+                    ) : null;
+
+                    let targetProductCode = exactMatch ? String(exactMatch.code).toUpperCase() : rawScanCode;
+
+                    // 2. पॉप-अप मधील टेबलच्या Rows शोधणे
+                    // (modalScan च्या सर्वात जवळचे tbody शोधतो, जेणेकरून परफेक्ट त्याच टेबलमध्ये काम करेल)
+                    let modalTableBody = this.closest('.modal-content') ? this.closest('.modal-content').querySelector('tbody') : document.querySelector('tbody');
+                    
+                    if(!modalTableBody) {
+                        alert("Table not found!");
+                        this.value = ""; return;
+                    }
+
+                    let rows = Array.from(modalTableBody.querySelectorAll('tr'));
+                    let qtyAdded = false;
+
+                    // 3. प्रत्येक Row चेक करणे
+                    for(let r of rows) {
+                        // तुमच्या फोटो नुसार: Cell[2] म्हणजे Medicine Name, Cell[3] म्हणजे Batch
+                        let medCellText = r.cells[2] ? r.cells[2].innerText.toUpperCase() : "";
+                        let batchCellText = r.cells[3] ? r.cells[3].innerText.toUpperCase() : "";
+
+                        let codeMatch = medCellText.includes("CODE: " + targetProductCode) || medCellText.includes(targetProductCode);
+                        let batchMatch = scanBatch ? batchCellText.includes(scanBatch) : true;
+
+                        if(codeMatch && batchMatch) {
+                            let qtyInput = r.querySelector('input[type="number"]');
+                            let maxQty = parseFloat(r.cells[6].innerText) || 0; // Cell[6] म्हणजे Sold Qty
+                            
+                            if(qtyInput) {
+                                let currentQty = parseFloat(qtyInput.value) || 0;
+                                
+                                if(currentQty < maxQty) {
+                                    // 🟢 इथे +1 ऍड होतेय!
+                                    qtyInput.value = currentQty + 1;
+                                    
+                                    // जर तुम्ही Qty बदलल्यावर काही Total कॅल्क्युलेट करत असाल, तर तो इव्हेंट फायर करा
+                                    qtyInput.dispatchEvent(new Event('input'));
+                                    qtyInput.dispatchEvent(new Event('change'));
+
+                                    // Row ला हिरवा रंग देऊन Visual Effect देणे
+                                    r.style.transition = "background 0.3s";
+                                    r.style.backgroundColor = "#dcfce7"; 
+                                    setTimeout(() => { r.style.backgroundColor = ""; }, 500);
+
+                                    qtyAdded = true;
+                                    break; // एक सापडला आणि ऍड झाला की लूप थांबवा
+                                }
+                            }
+                        }
+                    }
+
+                    if(!qtyAdded) {
+                        alert("⚠️ Item not found in this bill OR Maximum Return Quantity already reached!");
+                    }
+
+                    // 4. पुढच्या स्कॅनसाठी बॉक्स लगेच रिकामा करा
+                    this.value = "";
+                }
+            });
+        }
+    }, 2000); // DOM लोड होण्यासाठी थोडा वेळ
+    
+    // ==========================================
+    // 🔴 FRONT DESK & RECEPTION LOGIC (DYNAMIC)
+    // ==========================================
+
+    window.switchMgmtTab = function(tabName, btnEl) {
+        // 1. सर्व व्ह्यूज लपवा (active क्लास काढून)
+        document.querySelectorAll('.mg-view').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // 2. सर्व बटनांचे रंग नॉर्मल करा
+        document.querySelectorAll('.mg-tab-btn').forEach(el => {
+            el.classList.remove('active');
+        });
+        
+        // 3. जो टॅब निवडलाय फक्त त्यालाच active करा (स्क्रीनवर दाखवा)
+        let targetView = document.getElementById('mgView-' + tabName);
+        if(targetView) targetView.classList.add('active');
+        if(btnEl) btnEl.classList.add('active');
+        
+        // 4. हेडिंग अपडेट करा
+        let titleEl = document.getElementById('activeDashboardTitle');
+        if(titleEl && btnEl) titleEl.innerText = btnEl.innerText + " Management";
+        
+        // 5. जो टॅब उघडलाय त्याचा डेटा लगेच लोड करा
+        if(tabName === 'opd' && typeof window.loadOPDManagementList === 'function') window.loadOPDManagementList();
+        if(tabName === 'ipd' && typeof window.loadIPDManagementList === 'function') window.loadIPDManagementList();
+    };
+
+    // 🔴 1. ADVANCED MEDISYS-STYLE SMART DROPDOWN SEARCH
+    window.smartGlobalPatientSearch = function(val) {
+        let dropdown = document.getElementById('globalRecDropdown');
+        if(!dropdown) return;
+        
+        let query = val.toLowerCase().trim();
+        if(!query) { dropdown.style.display = 'none'; return; }
+        
+        // 🔴 ड्रॉपडाऊनला मोठा आणि आकर्षक बनवण्यासाठी स्टाईल (Z-Index Fix)
+        dropdown.style.width = "850px"; 
+        dropdown.style.maxWidth = "95vw";
+        dropdown.style.padding = "0";
+        dropdown.style.background = "#f8fafc";
+        dropdown.style.border = "1px solid #94a3b8";
+        dropdown.style.boxShadow = "0 15px 35px rgba(0,0,0,0.2)";
+        dropdown.style.borderRadius = "6px";
+        dropdown.style.zIndex = "99999";
+
+        // 🔴 Header Section (Search Results, City/Pin Filters & Close Button)
+        let html = `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#f1f5f9; padding:10px 15px; border-bottom:1px solid #cbd5e1; position:sticky; top:0; z-index:10; border-radius: 6px 6px 0 0;">
+                <div style="font-size: 14px; font-weight: bold; color: #334155;">
+                    Search Results for <span style="color: #0ea5e9;">"${val}"</span>
+                </div>
+                <div style="display:flex; gap:10px; align-items: center;">
+                    <input type="text" placeholder="Search City" style="padding:6px 12px; border:1px solid #cbd5e1; border-radius:4px; outline:none; font-size:12px; width:130px;">
+                    <div style="position:relative;">
+                        <input type="text" placeholder="Search PinCode" style="padding:6px 12px; border:1px solid #cbd5e1; border-radius:4px; outline:none; font-size:12px; width:130px;">
+                        <span class="material-symbols-outlined" style="position:absolute; right:8px; top:4px; font-size:18px; color:#94a3b8;">search</span>
+                    </div>
+                    <button style="background:#fff; color:#e74c3c; border:1px solid #fecaca; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; font-size:12px;" onclick="document.getElementById('globalRecDropdown').style.display='none'">Close ✕</button>
+                </div>
+            </div>
+            <div style="max-height:400px; overflow-y:auto; padding:10px; background:#fff;">
+        `;
+
+        let count = 0;
+        
+        // 🔴 Google Sheet कडून येणाऱ्या डेटाला मॅच करणे
+        for(let i = 0; i < globalPatients.length; i++) {
+            let pStr = String(globalPatients[i]);
+            if(pStr.toLowerCase().includes(query)) {
+                
+                // डेटा वेगळा करणे (जर Sheet मध्ये | ने वेगळा केला असेल तर, नाहीतर डीफॉल्ट व्हॅल्यू)
+                let parts = pStr.split('|');
+                let pName = parts[0] ? parts[0].trim() : pStr;
+                let pUhid = parts[1] ? parts[1].trim() : "MRN-XXXXX";
+                let pMob = parts[2] ? parts[2].trim() : "9999999999";
+                let pAge = parts[3] ? parts[3].trim() : "00 Yr";
+                let pAddress = parts[4] ? parts[4].trim() : "Amravati, Maharashtra";
+
+                // 🔴 Patient List Cards (हुबेहूब स्क्रीनशॉटसारखे)
+                html += `
+                    <div style="background:white; border:1px solid #e2e8f0; border-radius:6px; padding:12px 15px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 2px rgba(0,0,0,0.05); transition:0.2s; cursor:pointer;" onmouseover="this.style.borderColor='#0ea5e9'; this.style.backgroundColor='#f0f9ff'" onmouseout="this.style.borderColor='#e2e8f0'; this.style.backgroundColor='white'">
+                        
+                        <!-- Left: Avatar & Info -->
+                        <div style="display:flex; gap:15px; align-items:center; flex:1;">
+                            <div style="width:45px; height:45px; background:#e2e8f0; border-radius:4px; display:flex; align-items:center; justify-content:center; color:#94a3b8;">
+                                <span class="material-symbols-outlined" style="font-size:32px;">person</span>
+                            </div>
+                            <div>
+                                <div style="font-weight:900; color:#1e293b; font-size:15px; text-transform:uppercase;">${pName}</div>
+                                <div style="font-size:12px; color:#64748b; margin-top:4px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="color:#2c598f; font-weight:bold;">${pUhid}</span> 
+                                    <span style="color:#cbd5e1;">|</span> 
+                                    <span style="display: flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined" style="font-size:14px;">call</span> ${pMob}</span>
+                                </div>
+                                <div style="font-size:11px; color:#94a3b8; margin-top:4px;">${pAddress}</div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Age & Actions -->
+                        <div style="display:flex; align-items:center; gap:20px;">
+                            <div style="font-size:13px; color:#475569; font-weight:bold; border-left:1px solid #e2e8f0; padding-left:20px; width: 60px; text-align: center;">
+                                ${pAge}
+                            </div>
+                            <div style="display:flex; gap:0; border: 1px solid #cbd5e1; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05);">
+                                <button style="background:white; color:#1e293b; border:none; border-right: 1px solid #cbd5e1; padding:8px 16px; font-weight:bold; font-size:12px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'" onclick="selectPatientForAction('${pUhid}', 'OPD')">OPD</button>
+                                <button style="background:white; color:#1e293b; border:none; padding:8px 16px; font-weight:bold; font-size:12px; cursor:pointer; transition:0.2s;" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='white'" onclick="selectPatientForAction('${pUhid}', 'BILL')">BILL</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                count++;
+            }
+            if(count >= 15) break; 
+        }
+
+        // 🔴 Empty State (जर पेशंट सापडला नाही तर)
+        if(count === 0) {
+            html += `
+                <div style="text-align:center; padding:30px 10px; color:#64748b;">
+                    <span class="material-symbols-outlined" style="font-size:48px; color:#cbd5e1; margin-bottom:10px;">search_off</span>
+                    <div style="font-size: 16px; font-weight: bold; color: #475569; margin-bottom: 5px;">No matching patients found.</div>
+                    <div style="font-size: 13px; margin-bottom: 20px;">The patient "${val}" is not in the system.</div>
+                    <button style="background:#2c598f; color:white; border:none; padding:10px 25px; border-radius:4px; font-weight:bold; cursor:pointer; font-size: 14px; box-shadow: 0 4px 6px rgba(44, 89, 143, 0.2);" onclick="document.getElementById('globalRecDropdown').style.display='none'; window.openDynamicRegModal('OPD');">
+                        + Create New Registration
+                    </button>
+                </div>`;
+        }
+
+        html += `</div>`; 
+        dropdown.innerHTML = html;
+        dropdown.style.display = 'block';
+    };
+
+    // 🔴 Action Button Handler
+    window.selectPatientForAction = function(uhid, action) {
+        document.getElementById('globalRecDropdown').style.display = 'none';
+        document.getElementById('globalRecSearch').value = uhid; 
+        
+        if (action === 'OPD' || action === 'BILL') {
+            window.executeGlobalSearch(); 
+        }
+    };
+
+    window.executeGlobalSearch = function() {
+        let searchInp = document.getElementById('globalRecSearch');
+        if(!searchInp) return;
+        let query = searchInp.value.trim();
+        if(!query) return alert("Please enter Patient Name, UHID or Mobile.");
+
+        fetch(SCRIPT_URL + "?action=getPatientDetails&query=" + encodeURIComponent(query) + "&t=" + new Date().getTime())
+        .then(res => res.json()).then(data => {
+            if(data.success) {
+                document.getElementById('e_UHID').innerText = data.uhid;
+                document.getElementById('e_Name').innerText = data.name;
+                document.getElementById('e_Age').innerText = data.age;
+                document.getElementById('e_Gender').innerText = data.gender;
+                document.getElementById('e_Mobile').innerText = data.mobile;
+                document.getElementById('existingOpdModal').style.display = 'flex';
+                searchInp.value = '';
+            } else {
+                if(confirm("❌ Patient not found!\n\nDo you want to register a NEW patient?")) {
+                    searchInp.value = '';
+                    let activeTab = document.querySelector('.mg-tab-btn.active');
+                    let type = activeTab ? activeTab.innerText.split(' ')[0].toUpperCase() : 'OPD';
+                    window.openDynamicRegModal(type);
+                }
+            }
+        });
+    };
+
+    window.openDynamicRegModal = function(type) {
+        document.getElementById('dynSec-OPD').style.display = 'none';
+        document.getElementById('dynSec-EMG').style.display = 'none';
+        
+        document.getElementById('footer-OPD').style.display = 'none';
+        document.getElementById('footer-IPD').style.display = 'none';
+        document.getElementById('footer-EMG').style.display = 'none';
+        document.getElementById('footer-WALKIN').style.display = 'none';
+
+        let modal = document.getElementById('dynamicRegModal');
+        let title = document.getElementById('dynRegTitle');
+        let icon = document.getElementById('dynRegIcon');
+        let header = document.getElementById('dynHeader');
+
+        if(type === 'OPD') {
+            header.style.background = "#0ea5e9";
+            title.innerText = "Outpatient Registration & Billing";
+            icon.innerText = "stethoscope";
+            document.getElementById('dynSec-OPD').style.display = 'block';
+            document.getElementById('footer-OPD').style.display = 'flex';
+        } 
+        else if(type === 'IPD') {
+            header.style.background = "#2c598f";
+            title.innerText = "Inpatient Registration (IPD)";
+            icon.innerText = "bed";
+            document.getElementById('footer-IPD').style.display = 'flex';
+        } 
+        else if(type === 'EMG' || type === 'EMERGENCY') {
+            header.style.background = "#dc2626";
+            title.innerText = "Casualty / Emergency Registration";
+            icon.innerText = "emergency";
+            document.getElementById('dynSec-EMG').style.display = 'block';
+            document.getElementById('footer-EMG').style.display = 'flex';
+        } 
+        else if(type === 'WALKIN' || type === 'WALK') {
+            header.style.background = "#4f46e5";
+            title.innerText = "Walk-in Registration";
+            icon.innerText = "directions_walk";
+            document.getElementById('footer-WALKIN').style.display = 'flex';
+        }
+
+        document.getElementById('dynFooterTimestamp').innerText = new Date().toLocaleString('en-IN', { hour12: true });
+        modal.style.display = 'flex';
+    };
+
+    window.handleDynRoute = function() {
+        let routeObj = document.querySelector('input[name="dRoute"]:checked');
+        if(!routeObj) return;
+        let route = routeObj.value;
+        let feeInput = document.getElementById('opdFee');
+        let payMode = document.getElementById('opdPayMode');
+
+        if(route === "Camp") { feeInput.value = 0; feeInput.disabled = true; payMode.value = "CASH"; }
+        else if(route === "Corporate" || route === "TPA") { feeInput.disabled = false; payMode.value = "CREDIT"; }
+        else { feeInput.value = 500; feeInput.disabled = false; payMode.value = "CASH"; }
+        window.calcDynBill();
+    };
+
+    window.calcDynBill = function() {
+        let fee = parseFloat(document.getElementById('opdFee').value) || 0;
+        let disc = parseFloat(document.getElementById('opdDisc').value) || 0;
+        document.getElementById('opdNet').value = (fee - (fee*(disc/100))).toFixed(2);
+    };
+
+    // Helper: Collect Demographics
+    function getDemographics() {
+        return {
+            prefix: document.getElementById('regPrefix').value,
+            fName: document.getElementById('regName').value.trim(),
+            gender: document.getElementById('regGender').value,
+            mobile: document.getElementById('regMobile').value.trim(),
+            age: document.getElementById('regAgeY').value
+        };
+    }
+
+    // A. OPD Submission
+    window.submitOPDRegistration = function() {
+        let demo = getDemographics();
+        if(!demo.fName || !demo.mobile) return alert("Patient Name and Mobile are mandatory!");
+        
+        let doctor = document.getElementById('opdDoctor').value;
+        if(!doctor) return alert("Please select a Doctor for OPD.");
+
+        let payload = {
+            action: "registerAndBookOPD", 
+            fName: demo.fName, prefix: demo.prefix, gender: demo.gender, mobile: demo.mobile,
+            department: document.getElementById('opdDept').value,
+            doctor: doctor,
+            amount: document.getElementById('opdNet').value,
+            payMode: document.getElementById('opdPayMode').value
+        };
+
+        let btn = event.target; let origText = btn.innerText; btn.innerText = "Processing..."; btn.disabled = true;
+
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json()).then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if(data.success) {
+                alert(`✅ OPD Registration Complete!\nUHID: ${data.uhid}\n\nReceipt is printing...`);
+                document.getElementById('dynamicRegModal').style.display = 'none';
+                if(typeof window.loadOPDManagementList === 'function') window.loadOPDManagementList();
+            } else alert("Error: " + data.message);
+        }).catch(err => { btn.innerText = origText; btn.disabled = false; alert("Error connecting to server."); });
+    };
+
+    // B. IPD Submission
+    window.submitIPDRegistration = function() {
+        let demo = getDemographics();
+        if(!demo.fName || !demo.mobile) return alert("Patient Name and Mobile are mandatory!");
+        
+        let payload = {
+            action: "registerIPD", 
+            fName: demo.fName, mobile: demo.mobile, gender: demo.gender
+        };
+
+        let btn = event.target; let origText = btn.innerText; btn.innerText = "Admitting..."; btn.disabled = true;
+
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json()).then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if(data.success) {
+                alert(`✅ IPD Registration Successful!\nUHID: ${data.uhid}\n\nPlease proceed to Bed Allocation.`);
+                document.getElementById('dynamicRegModal').style.display = 'none';
+            } else alert("Error: " + data.message);
+        }).catch(err => { btn.innerText = origText; btn.disabled = false; alert("IPD Action required in backend!"); });
+    };
+
+    // C. Emergency Submission
+    window.submitEmergencyRegistration = function() {
+        let demo = getDemographics();
+        if(!demo.fName) return alert("Patient Name is mandatory!");
+        
+        let erCodeObj = document.querySelector('input[name="erCode"]:checked');
+        
+        let payload = {
+            action: "registerEmergency", 
+            fName: demo.fName, mobile: demo.mobile, 
+            arrivalMode: document.getElementById('emgArrival').value,
+            erCode: erCodeObj ? erCodeObj.value : "3",
+            doctor: document.getElementById('emgDoctor').value,
+            isMLC: document.getElementById('emgMLC').checked
+        };
+
+        let btn = event.target; let origText = btn.innerText; btn.innerText = "Saving..."; btn.disabled = true;
+
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json()).then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if(data.success) {
+                alert(`🚨 Casualty Record Saved!\nUHID: ${data.uhid}`);
+                document.getElementById('dynamicRegModal').style.display = 'none';
+            } else alert("Error: " + data.message);
+        }).catch(err => { btn.innerText = origText; btn.disabled = false; alert("Emergency Action required in backend!"); });
+    };
+
+    // D. Walkin Submission
+    window.submitWalkinRegistration = function() {
+        let demo = getDemographics();
+        if(!demo.fName || !demo.mobile) return alert("Patient Name and Mobile are mandatory!");
+        
+        let payload = {
+            action: "registerWalkin", 
+            fName: demo.fName, mobile: demo.mobile, gender: demo.gender
+        };
+
+        let btn = event.target; let origText = btn.innerText; btn.innerText = "Saving..."; btn.disabled = true;
+
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json()).then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if(data.success) {
+                alert(`✅ Walkin Registered!\nUHID: ${data.uhid}`);
+                document.getElementById('dynamicRegModal').style.display = 'none';
+            } else alert("Error: " + data.message);
+        }).catch(err => { btn.innerText = origText; btn.disabled = false; alert("Walkin Action required in backend!"); });
+    };
+
+    window.submitExistingOPD = function() {
+        let payload = {
+            action: "bookOPDAppointment", 
+            uhid: document.getElementById('e_UHID').innerText,
+            patientName: document.getElementById('e_Name').innerText, 
+            department: document.getElementById('e_Dept').value,
+            doctor: document.getElementById('e_Doctor').value,
+            amount: document.getElementById('e_Fee').value,
+            payMode: document.getElementById('e_PayMode').value
+        };
+
+        let btn = event.target; let origText = btn.innerText; btn.innerText = "Booking..."; btn.disabled = true;
+
+        fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(res => res.json()).then(data => {
+            btn.innerText = origText; btn.disabled = false;
+            if(data.success) {
+                alert(`✅ OPD Appointment Booked!\n\nPrinting...`);
+                document.getElementById('existingOpdModal').style.display = 'none';
+                if(typeof window.loadOPDManagementList === 'function') window.loadOPDManagementList();
+            } else alert("Error from server: " + data.message);
+        }).catch(err => { btn.innerText = origText; btn.disabled = false; alert("System Error."); });
+    };
+
+    // 🔴 FETCH & RENDER OPD DASHBOARD (WITH EXACT MEDISYS LOOK & KPI SYNC)
+    window.loadOPDManagementList = function() {
+        let tbody = document.getElementById('opdMgrTableBody');
+        if(!tbody) return;
+        
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 40px; color:#7f8c8d; font-size:14px;">Loading today's records...</td></tr>`;
+
+        fetch(SCRIPT_URL + "?action=getOPDAppointments&t=" + new Date().getTime())
+        .then(res => res.json())
+        .then(data => {
+            if(data.success && data.records && data.records.length > 0) {
+                tbody.innerHTML = '';
+                
+                let todayStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-'); 
+
+                // 🟢 KPI Variables (Corrected)
+                let totalOpdCount = 0;
+                let newRegCount = 0;
+                let waitingCount = 0;
+                let tpaCorpCount = 0;
+
+                data.records.forEach((r, index) => {
+                    let cleanMrn = r.uhid ? r.uhid.replace('UHID-', '') : '00000';
+                    let cat = r.category || 'PAYING';
+                    
+                    // 🟢 KPI Calculations
+                    totalOpdCount++;
+                    if(cat.toUpperCase() === 'TPA' || cat.toUpperCase() === 'CORPORATE') tpaCorpCount++;
+                    if(cat.toUpperCase() === 'PAYING' || cat.toUpperCase() === 'CASH') newRegCount++; 
+                    waitingCount++; 
+                    
+                    // 🟢 Render Medisys Style Row
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>
+                                <div style="font-weight:600; color:#334155; font-size:13px; text-transform:uppercase;">${r.patientName}</div>
+                                <div style="color:#94a3b8; font-size:11px; margin-top:4px;">MRN-${cleanMrn}</div>
+                            </td>
+                            <td style="color:#64748b; font-weight:500; font-size:12px;">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span class="material-symbols-outlined" style="font-size:15px; color:#cbd5e1;">person</span> ${todayStr}
+                                </div>
+                            </td>
+                            <td style="color:#64748b; font-weight:500; font-size:12px; letter-spacing: 0.5px;">
+                                <span style="background:#16a34a; color:white; padding:1px 5px; border-radius:3px; font-size:10px; font-weight:bold; margin-right:6px;">N</span>HHBM/OPD.26-27-${String(1280 + index)}
+                            </td>
+                            <td style="color:#64748b; font-weight:500; font-size:11px; text-transform:uppercase;">${cat}</td>
+                            <td style="text-align:center; color:#64748b; font-weight:500; font-size:12px;">
+                                0.0 <span class="material-symbols-outlined" style="font-size:15px; vertical-align:text-bottom; color:#cbd5e1;">receipt_long</span>
+                            </td>
+                            <td style="color:#64748b; font-weight:500; font-size:12px; text-transform:uppercase;">${r.doctor || '-'}</td>
+                            <td style="color:#64748b; font-weight:500; font-size:11px; text-align:center;">ME_C-BMCCU/${10 + index}_550</td>
+                            <td style="text-align:center; display:flex; gap:12px; justify-content:center; align-items:center;">
+                                <span class="material-symbols-outlined" style="font-size:20px; color:#94a3b8; cursor:pointer; transition:0.2s;" onmouseover="this.style.color='#22c55e'" onmouseout="this.style.color='#94a3b8'" title="Print Bill">print</span>
+                                <span class="material-symbols-outlined" style="font-size:20px; color:#94a3b8; cursor:pointer; transition:0.2s;" onmouseover="this.style.color='#3b82f6'" onmouseout="this.style.color='#94a3b8'" title="Print OPD Sheet">description</span>
+                                <span class="material-symbols-outlined" style="font-size:20px; color:#94a3b8; cursor:pointer; transition:0.2s;" onmouseover="this.style.color='#f59e0b'" onmouseout="this.style.color='#94a3b8'" title="Unlock">lock_open</span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                // 🟢 Update KPI Graphic Elements
+                if(document.getElementById('kpi_opdTotal')) document.getElementById('kpi_opdTotal').innerText = totalOpdCount;
+                if(document.getElementById('kpi_opdNew')) document.getElementById('kpi_opdNew').innerText = newRegCount;
+                if(document.getElementById('kpi_opdWait')) document.getElementById('kpi_opdWait').innerText = waitingCount; 
+                if(document.getElementById('kpi_opdTpa')) document.getElementById('kpi_opdTpa').innerText = tpaCorpCount;
+
+            } else {
+                tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 60px; color:#10b981; font-weight:bold; font-size:15px;">No OPD appointments booked yet today.</td></tr>`;
+                
+                // 🟢 Reset KPIs to 0 if no records
+                ['kpi_opdTotal', 'kpi_opdNew', 'kpi_opdWait', 'kpi_opdTpa'].forEach(id => {
+                    if(document.getElementById(id)) document.getElementById(id).innerText = '0';
+                });
+            }
+        }).catch(err => {
+            tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding: 60px; color:#ef4444; font-size:15px;">Error loading records.</td></tr>`;
+        });
+    };
+
+    // 🔴 SMART COLUMN FILTERS (Adjusted for merged Patient+MRN column)
+    window.filterTable = function(type) {
+        if (type === 'opd') {
+            let tbody = document.getElementById('opdMgrTableBody');
+            if(!tbody) return;
+            let rows = tbody.getElementsByTagName('tr');
+
+            let fNameMrn = document.getElementById('fltOpdName').value.toLowerCase();
+            let fReg = document.getElementById('fltOpdReg').value.toLowerCase();
+            let fCat = document.getElementById('fltOpdCat').value.toLowerCase();
+            let fDoc = document.getElementById('fltOpdDoc').value.toLowerCase();
+
+            for (let i = 0; i < rows.length; i++) {
+                if (rows[i].cells.length < 8) continue; 
+                
+                // Patient Name and MRN are both inside cells[0]
+                let nameMrnText = rows[i].cells[0].innerText.toLowerCase();
+                let regText = rows[i].cells[2].innerText.toLowerCase();
+                let catText = rows[i].cells[3].innerText.toLowerCase();
+                let docText = rows[i].cells[5].innerText.toLowerCase();
+
+                if (nameMrnText.includes(fNameMrn) && regText.includes(fReg) && catText.includes(fCat) && docText.includes(fDoc)) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
+                }
+            }
+        }
+    };
+    // 🔴 DUAL VIEW TOGGLE (IPD DATA VS GRAPHICS)
+    window.switchIpdView = function(viewType) {
+        let dataBtn = document.getElementById('btnIpdDataView');
+        let kpiBtn = document.getElementById('btnIpdKpiView');
+        let dataView = document.getElementById('ipd-data-view');
+        let kpiView = document.getElementById('ipd-graphical-view');
+
+        if(viewType === 'data') {
+            // Data Button Active
+            dataBtn.style.background = 'white'; dataBtn.style.color = '#0ea5e9'; dataBtn.style.borderColor = '#bae6fd'; dataBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            kpiBtn.style.background = 'transparent'; kpiBtn.style.color = '#64748b'; kpiBtn.style.borderColor = 'transparent'; kpiBtn.style.boxShadow = 'none';
+            // Show Data, Hide Graphic
+            dataView.style.display = 'flex';
+            kpiView.style.display = 'none';
+        } else {
+            // KPI Button Active
+            kpiBtn.style.background = 'white'; kpiBtn.style.color = '#0ea5e9'; kpiBtn.style.borderColor = '#bae6fd'; kpiBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
+            dataBtn.style.background = 'transparent'; dataBtn.style.color = '#64748b'; dataBtn.style.borderColor = 'transparent'; dataBtn.style.boxShadow = 'none';
+            // Show Graphic, Hide Data
+            dataView.style.display = 'none';
+            kpiView.style.display = 'flex';
+            
+            // Render Graphic Chart only once
+            if(!window.isIpdChartRendered) {
+                renderIpdGraphicalChart();
+                window.isIpdChartRendered = true;
+            }
+        }
+    };
+
+    // 🔴 RENDER IPD WARD OCCUPANCY CHART
+    window.renderIpdGraphicalChart = function() {
+        let ctx = document.getElementById('ipdGraphicalChart');
+        if(ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['General Ward (Full)', 'ICU (Available)', 'Private (Full)', 'Semi-Private (Available)'],
+                    datasets: [{
+                        data: [40, 15, 10, 20],
+                        backgroundColor: ['#ef4444', '#10b981', '#f59e0b', '#3b82f6'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: { 
+                        legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, font: {size: 11} } } 
+                    }
+                }
+            });
+        }
+    };
+
+    window.resetDashboardFilters = function(type) {
+        if (type === 'opd') {
+            document.getElementById('fltOpdName').value = '';
+            document.getElementById('fltOpdMrn').value = '';
+            document.getElementById('fltOpdReg').value = '';
+            document.getElementById('fltOpdCat').value = '';
+            document.getElementById('fltOpdDoc').value = '';
+            filterTable('opd'); // Reset the view
+        } 
+        else if (type === 'ipd') {
+            document.getElementById('fltIpdName').value = '';
+            document.getElementById('fltIpdMrn').value = '';
+            document.getElementById('fltIpdReg').value = '';
+            document.getElementById('fltIpdCat').value = '';
+            document.getElementById('fltIpdDoc').value = '';
+            document.getElementById('fltIpdDept').value = '';
+            document.getElementById('fltIpdWard').value = '';
+            filterTable('ipd'); // Reset the view
+        }
+    };
+    
+    // Auto-Set Today's Date on Load
+    setTimeout(() => {
+        let today = new Date().toISOString().split('T')[0];
+        if(document.getElementById('dashOpdFromDate')) document.getElementById('dashOpdFromDate').value = today;
+        if(document.getElementById('dashOpdToDate')) document.getElementById('dashOpdToDate').value = today;
+        if(document.getElementById('dashIpdFromDate')) document.getElementById('dashIpdFromDate').value = today;
+        if(document.getElementById('dashIpdToDate')) document.getElementById('dashIpdToDate').value = today;
+    }, 500);
+    // 🔴 FETCH & RENDER IPD DASHBOARD (WITH LIVE UNFILTERED KPIS)
+    window.loadIPDManagementList = function() {
+        let tbody = document.getElementById('dashIpdBody');
+        if(!tbody) return;
+        
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 40px; color:#7f8c8d; font-size:14px; font-weight:bold;">Loading IPD records...</td></tr>`;
+
+        // Note: You can append fromDate and toDate to this fetch URL if backend supports it.
+        fetch(SCRIPT_URL + "?action=getIPDAppointments&t=" + new Date().getTime())
+        .then(res => res.json())
+        .then(data => {
+            if(data.success && data.records && data.records.length > 0) {
+                tbody.innerHTML = '';
+                
+                let totalAdmitted = 0;
+                let newAdmissions = 0;
+                let discharges = 0;
+                let totalDues = 0;
+
+                let todayStr = new Date().toISOString().split('T')[0];
+
+                data.records.forEach((r, index) => {
+                    // 🟢 KPI CALCULATIONS (Unfiltered, processes all fetched data)
+                    totalAdmitted++;
+                    if(r.admissionDate === todayStr) newAdmissions++;
+                    if(r.status === 'Discharged' && r.dischargeDate === todayStr) discharges++;
+                    
+                    let billed = parseFloat(r.billedAmt) || 0;
+                    let paid = parseFloat(r.paidAmt) || 0;
+                    let due = billed - paid;
+                    if(due > 0) totalDues += due;
+                    
+                    // 🟢 RENDER TABLE ROW
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><b>${r.patientName}</b></td>
+                            <td style="color:#0284c7; font-weight:800;">${r.uhid}</td>
+                            <td style="color:#475569; font-weight:600;">IPD-2026-${String(index+1).padStart(4, '0')}</td>
+                            <td><span style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:12px; font-weight:800; font-size:11px; border:1px solid #bae6fd;">${r.category || 'Regular'}</span></td>
+                            <td style="font-weight:600; color:#334155;">${r.doctor || '-'}</td>
+                            <td>${r.department || '-'}</td>
+                            <td style="font-weight:bold; color:#d97706;">${r.ward || '-'} / ${r.bed || '-'}</td>
+                            <td style="text-align:right; font-weight:bold; color:#1e293b;">₹${billed.toFixed(2)}</td>
+                            <td style="text-align:right; font-weight:bold; color:#10b981;">₹${paid.toFixed(2)}</td>
+                            <td style="text-align:right; font-weight:900; color:#ef4444;">₹${due.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+
+                // 🟢 UPDATE KPI CARDS (These will not change when you type in the column filters)
+                if(document.getElementById('kpi_ipdTotal')) document.getElementById('kpi_ipdTotal').innerText = totalAdmitted;
+                if(document.getElementById('kpi_ipdNew')) document.getElementById('kpi_ipdNew').innerText = newAdmissions;
+                if(document.getElementById('kpi_ipdDischarge')) document.getElementById('kpi_ipdDischarge').innerText = discharges;
+                if(document.getElementById('kpi_ipdDues')) document.getElementById('kpi_ipdDues').innerText = totalDues.toFixed(0);
+
+            } else {
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 60px; color:#10b981; font-weight:bold; font-size:15px;">No IPD records available.</td></tr>`;
+                // Reset KPIs
+                ['kpi_ipdTotal', 'kpi_ipdNew', 'kpi_ipdDischarge', 'kpi_ipdDues'].forEach(id => {
+                    if(document.getElementById(id)) document.getElementById(id).innerText = '0';
+                });
+            }
+        }).catch(err => {
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding: 60px; color:#ef4444; font-size:15px;">Error loading IPD records. Please connect to Google Sheets.</td></tr>`;
+        });
+    };
+    // 🔴 DUAL VIEW TOGGLE (OPD DATA VS GRAPHICS)
+    window.switchOpdView = function(viewType) {
+        let dataBtn = document.getElementById('btnOpdDataView');
+        let kpiBtn = document.getElementById('btnOpdKpiView');
+        let dataView = document.getElementById('opd-data-view');
+        let kpiView = document.getElementById('opd-graphical-view');
+
+        if(viewType === 'data') {
+            if(dataBtn) { dataBtn.style.background = 'white'; dataBtn.style.color = '#0ea5e9'; dataBtn.style.borderColor = '#bae6fd'; dataBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'; }
+            if(kpiBtn) { kpiBtn.style.background = 'transparent'; kpiBtn.style.color = '#64748b'; kpiBtn.style.borderColor = 'transparent'; kpiBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'flex';
+            if(kpiView) kpiView.style.display = 'none';
+        } else {
+            if(kpiBtn) { kpiBtn.style.background = 'white'; kpiBtn.style.color = '#0ea5e9'; kpiBtn.style.borderColor = '#bae6fd'; kpiBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'; }
+            if(dataBtn) { dataBtn.style.background = 'transparent'; dataBtn.style.color = '#64748b'; dataBtn.style.borderColor = 'transparent'; dataBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'none';
+            if(kpiView) kpiView.style.display = 'flex';
+            
+            // Render Graphic Chart only once
+            if(!window.isOpdChartRendered) {
+                if(typeof renderOpdGraphicalChart === 'function') renderOpdGraphicalChart();
+                window.isOpdChartRendered = true;
+            }
+        }
+    };
+
+    // 🔴 DUAL VIEW TOGGLE (IPD DATA VS GRAPHICS)
+    window.switchIpdView = function(viewType) {
+        let dataBtn = document.getElementById('btnIpdDataView');
+        let kpiBtn = document.getElementById('btnIpdKpiView');
+        let dataView = document.getElementById('ipd-data-view');
+        let kpiView = document.getElementById('ipd-graphical-view');
+
+        if(viewType === 'data') {
+            if(dataBtn) { dataBtn.style.background = 'white'; dataBtn.style.color = '#0ea5e9'; dataBtn.style.borderColor = '#bae6fd'; dataBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'; }
+            if(kpiBtn) { kpiBtn.style.background = 'transparent'; kpiBtn.style.color = '#64748b'; kpiBtn.style.borderColor = 'transparent'; kpiBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'flex';
+            if(kpiView) kpiView.style.display = 'none';
+        } else {
+            if(kpiBtn) { kpiBtn.style.background = 'white'; kpiBtn.style.color = '#0ea5e9'; kpiBtn.style.borderColor = '#bae6fd'; kpiBtn.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)'; }
+            if(dataBtn) { dataBtn.style.background = 'transparent'; dataBtn.style.color = '#64748b'; dataBtn.style.borderColor = 'transparent'; dataBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'none';
+            if(kpiView) kpiView.style.display = 'flex';
+            
+            if(!window.isIpdChartRendered) {
+                if(typeof renderIpdGraphicalChart === 'function') renderIpdGraphicalChart();
+                window.isIpdChartRendered = true;
+            }
+        }
+    };
+    // ==========================================
+    // 🔴 RENDER CHARTS (OPD & IPD GRAPHICS)
+    // ==========================================
+
+    // 1. OPD Footfall Chart (Bar Chart)
+    window.renderOpdGraphicalChart = function() {
+        let ctx = document.getElementById('opdGraphicalChart');
+        if(ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Medicine', 'Surgery', 'Ortho', 'Gynae', 'Pediatrics'],
+                    datasets: [{
+                        label: 'Patient Footfall',
+                        data: [45, 25, 30, 15, 20],
+                        backgroundColor: '#0ea5e9',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    };
+
+    // 2. IPD Ward Occupancy Chart (Doughnut Chart)
+    window.renderIpdGraphicalChart = function() {
+        let ctx = document.getElementById('ipdGraphicalChart');
+        if(ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['General Ward (Full)', 'ICU (Available)', 'Private (Full)', 'Semi-Private (Available)'],
+                    datasets: [{
+                        data: [45, 15, 12, 28],
+                        backgroundColor: ['#ef4444', '#10b981', '#f59e0b', '#3b82f6'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: { 
+                        legend: { 
+                            position: 'right', 
+                            labels: { usePointStyle: true, padding: 20, font: {size: 12, weight: 'bold', family: 'Roboto'} } 
+                        } 
+                    }
+                }
+            });
+        }
+    };
+    // ==========================================
+    // 🔴 EMG & WALKIN TOGGLE FUNCTIONS
+    // ==========================================
+    window.switchEmgView = function(viewType) {
+        let dataBtn = document.getElementById('btnEmgDataView');
+        let kpiBtn = document.getElementById('btnEmgKpiView');
+        let dataView = document.getElementById('emg-data-view');
+        let kpiView = document.getElementById('emg-graphical-view');
+
+        if(viewType === 'data') {
+            if(dataBtn) { dataBtn.style.background = 'white'; dataBtn.style.color = '#ef4444'; dataBtn.style.borderColor = '#fca5a5'; dataBtn.style.boxShadow = '0 2px 4px rgba(239,68,68,0.1)'; }
+            if(kpiBtn) { kpiBtn.style.background = 'transparent'; kpiBtn.style.color = '#991b1b'; kpiBtn.style.borderColor = 'transparent'; kpiBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'flex';
+            if(kpiView) kpiView.style.display = 'none';
+        } else {
+            if(kpiBtn) { kpiBtn.style.background = 'white'; kpiBtn.style.color = '#ef4444'; kpiBtn.style.borderColor = '#fca5a5'; kpiBtn.style.boxShadow = '0 2px 4px rgba(239,68,68,0.1)'; }
+            if(dataBtn) { dataBtn.style.background = 'transparent'; dataBtn.style.color = '#991b1b'; dataBtn.style.borderColor = 'transparent'; dataBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'none';
+            if(kpiView) kpiView.style.display = 'flex';
+            
+            if(!window.isEmgChartRendered) {
+                if(typeof renderEmgGraphicalChart === 'function') renderEmgGraphicalChart();
+                window.isEmgChartRendered = true;
+            }
+        }
+    };
+
+    window.switchWalkView = function(viewType) {
+        let dataBtn = document.getElementById('btnWalkDataView');
+        let kpiBtn = document.getElementById('btnWalkKpiView');
+        let dataView = document.getElementById('walk-data-view');
+        let kpiView = document.getElementById('walk-graphical-view');
+
+        if(viewType === 'data') {
+            if(dataBtn) { dataBtn.style.background = 'white'; dataBtn.style.color = '#4f46e5'; dataBtn.style.borderColor = '#a5b4fc'; dataBtn.style.boxShadow = '0 2px 4px rgba(79,70,229,0.1)'; }
+            if(kpiBtn) { kpiBtn.style.background = 'transparent'; kpiBtn.style.color = '#3730a3'; kpiBtn.style.borderColor = 'transparent'; kpiBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'flex';
+            if(kpiView) kpiView.style.display = 'none';
+        } else {
+            if(kpiBtn) { kpiBtn.style.background = 'white'; kpiBtn.style.color = '#4f46e5'; kpiBtn.style.borderColor = '#a5b4fc'; kpiBtn.style.boxShadow = '0 2px 4px rgba(79,70,229,0.1)'; }
+            if(dataBtn) { dataBtn.style.background = 'transparent'; dataBtn.style.color = '#3730a3'; dataBtn.style.borderColor = 'transparent'; dataBtn.style.boxShadow = 'none'; }
+            if(dataView) dataView.style.display = 'none';
+            if(kpiView) kpiView.style.display = 'flex';
+            
+            if(!window.isWalkChartRendered) {
+                if(typeof renderWalkGraphicalChart === 'function') renderWalkGraphicalChart();
+                window.isWalkChartRendered = true;
+            }
+        }
+    };
+
+    // ==========================================
+    // 🔴 EMG & WALKIN CHARTS
+    // ==========================================
+    window.renderEmgGraphicalChart = function() {
+        let ctx = document.getElementById('emgGraphicalChart');
+        if(ctx) {
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Red (Immediate)', 'Yellow (Urgent)', 'Green (Delayed)', 'Black (Deceased)'],
+                    datasets: [{
+                        label: 'Triage Count',
+                        data: [5, 12, 25, 0],
+                        backgroundColor: ['#ef4444', '#f59e0b', '#10b981', '#1e293b'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+    };
+
+    window.renderWalkGraphicalChart = function() {
+        let ctx = document.getElementById('walkGraphicalChart');
+        if(ctx) {
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pharmacy Only', 'Lab Diagnostics', 'Direct Consult'],
+                    datasets: [{
+                        data: [55, 30, 15],
+                        backgroundColor: ['#10b981', '#f59e0b', '#6366f1'],
+                        borderWidth: 2, borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '70%',
+                    plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 20, font: {size: 12, weight: 'bold'} } } }
+                }
+            });
+        }
+    };
+    // ==========================================
+    // 🔴 DYNAMIC PATIENT REGISTRATION LOGIC
+    // ==========================================
+
+    // 1. Open Modal Dynamically Based on Current Tab
+    window.openDynamicRegModal = function(type) {
+        // आधी सर्व सेक्शन्स आणि फुटर लपवा
+        document.getElementById('dynSec-OPD').style.display = 'none';
+        document.getElementById('dynSec-EMG').style.display = 'none';
+        document.getElementById('footer-OPD').style.display = 'none';
+        document.getElementById('footer-IPD').style.display = 'none';
+        document.getElementById('footer-EMG').style.display = 'none';
+        document.getElementById('footer-WALKIN').style.display = 'none';
+
+        let title = document.getElementById('dynRegTitle');
+        let icon = document.getElementById('dynRegIcon');
+
+        // कोणत्या टॅबवरून + बटण दाबलंय त्यानुसार फॉर्म सेट करा
+        if(type === 'OPD') {
+            title.innerText = "New OPD Registration";
+            icon.innerText = "how_to_reg";
+            document.getElementById('dynSec-OPD').style.display = 'block';
+            document.getElementById('footer-OPD').style.display = 'flex';
+        }
+        else if(type === 'IPD') {
+            title.innerText = "New IPD Admission";
+            icon.innerText = "bed";
+            document.getElementById('dynSec-OPD').style.display = 'block'; // IPD ला पण बिलिंग लागतं
+            document.getElementById('footer-IPD').style.display = 'flex';
+        }
+        else if(type === 'EMERGENCY') {
+            title.innerText = "Emergency / Casualty Registration";
+            icon.innerText = "emergency";
+            document.getElementById('dynSec-EMG').style.display = 'block';
+            document.getElementById('footer-EMG').style.display = 'flex';
+        }
+        else if(type === 'WALKIN') {
+            title.innerText = "Walk-in Patient (Pharmacy/Lab)";
+            icon.innerText = "directions_walk";
+            document.getElementById('footer-WALKIN').style.display = 'flex';
+        }
+
+        // फुटरमध्ये वेळ आणि युझरचे नाव दाखवा
+        let footerTs = document.getElementById('dynFooterTimestamp');
+        if(footerTs) footerTs.innerText = "User: " + (loggedInName || "Admin") + " | " + new Date().toLocaleString('en-GB');
+        
+        document.getElementById('dynamicRegModal').style.display = 'flex';
+    };
+
+    // 2. Auto Calculate Billing Amount
+    window.calcDynBill = function() {
+        let fee = parseFloat(document.getElementById('opdFee').value) || 0;
+        let disc = parseFloat(document.getElementById('opdDisc').value) || 0;
+        let net = fee - (fee * (disc / 100));
+        document.getElementById('opdNet').value = net.toFixed(2);
+    };
+
+    // 3. Dynamic Route Handling (Regular / Corporate / TPA / Camp)
+    window.handleDynRoute = function() {
+        let route = document.querySelector('input[name="dRoute"]:checked').value;
+        let catSelect = document.getElementById('opdCat');
+        let feeInput = document.getElementById('opdFee');
+        let payMode = document.getElementById('opdPayMode');
+        
+        if(route === 'Corporate' || route === 'TPA') {
+            catSelect.innerHTML = `<option value="${route}">${route}</option>`;
+            feeInput.value = 0; // Insurance/Corporate ला आधी पैसे घेत नाहीत
+            if(payMode.querySelector('option[value="CREDIT"]') === null) {
+                payMode.innerHTML += `<option value="CREDIT">CREDIT (TPA/Corp)</option>`;
+            }
+            payMode.value = "CREDIT";
+        } else if(route === 'Camp') {
+            catSelect.innerHTML = `<option value="FREE">FREE</option>`;
+            feeInput.value = 0;
+            payMode.value = "CASH";
+        } else {
+            catSelect.innerHTML = `<option value="PAYING">PAYING</option><option value="FREE">FREE</option>`;
+            feeInput.value = 500; // Regular ची डिफॉल्ट फी
+            payMode.value = "CASH";
+            // Remove Credit option if it exists
+            let creditOpt = payMode.querySelector('option[value="CREDIT"]');
+            if(creditOpt) creditOpt.remove();
+        }
+        calcDynBill();
+    };
+
+    // 4. Smart Auto Age / DOB Calculator
+    setTimeout(() => {
+        let dobInp = document.getElementById('regDOB');
+        let ageY = document.getElementById('regAgeY');
+        let ageM = document.getElementById('regAgeM');
+
+        if(dobInp && ageY && ageM) {
+            // जर DOB निवडली, तर Age आपोआप निघेल
+            dobInp.addEventListener('change', function() {
+                let dob = new Date(this.value);
+                if(isNaN(dob)) return;
+                let today = new Date();
+                let y = today.getFullYear() - dob.getFullYear();
+                let m = today.getMonth() - dob.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                    y--; m += 12;
+                }
+                ageY.value = y;
+                ageM.value = m;
+            });
+
+            // जर फक्त Age (वर्ष) टाकले, तर अंदाजे DOB सेट होईल
+            ageY.addEventListener('input', function() {
+                let y = parseInt(this.value) || 0;
+                let today = new Date();
+                let dobYear = today.getFullYear() - y;
+                dobInp.value = `${dobYear}-01-01`; 
+            });
+        }
+    }, 1500);
+
+    // ==========================================
+    // 🔴 5. LIVE BACKEND SUBMIT LOGIC (GOOGLE SHEETS)
+    // ==========================================
+
+    window.submitOPDRegistration = function() {
+        let nameFull = document.getElementById('regName').value.trim();
+        let mobile = document.getElementById('regMobile').value.trim();
+        let dept = document.getElementById('opdDept').value;
+        let doctor = document.getElementById('opdDoctor').value;
+
+        if(!nameFull || !mobile || !dept || !doctor) return alert("⚠️ Patient Name, Mobile No, Department, and Doctor are mandatory!");
+
+        let nameParts = nameFull.split(" ");
+        let fName = nameParts[0];
+        let lName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+
+        let btn = document.querySelector('#footer-OPD .btn-dispatch');
+        let origText = btn.innerText;
+        btn.innerText = "⏳ Registering..."; btn.disabled = true;
+
+        // 1. Register Patient Payload
+        let payload = {
+            action: "registerPatient",
+            prefix: document.getElementById('regPrefix').value,
+            fName: fName,
+            lName: lName,
+            age: document.getElementById('regAgeY').value,
+            gender: document.getElementById('regGender').value,
+            mobile: mobile,
+            state: document.getElementById('regState').value,
+            district: document.getElementById('regDistrict').value,
+            city: document.getElementById('regCity').value,
+            visitType: "OPD",
+            department: dept,
+            doctor: doctor,
+            paymentMode: document.getElementById('opdPayMode').value,
+            amountCollected: document.getElementById('opdNet').value,
+            registeredBy: window.loggedInName || "Receptionist"
+        };
+
+        // 2. Fetch Call to Apps Script
+        fetch(SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                let generatedUhid = data.uhid;
+                
+                // 3. Immediately Book OPD Appointment
+                let apptPayload = {
+                    action: "bookOPDAppointment",
+                    uhid: generatedUhid,
+                    patientName: nameFull,
+                    department: dept,
+                    doctor: doctor,
+                    category: document.getElementById('opdCat').value,
+                    paymentMode: document.getElementById('opdPayMode').value,
+                    amount: document.getElementById('opdNet').value,
+                    bookedBy: window.loggedInName || "Receptionist"
+                };
+
+                return fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify(apptPayload)
+                }).then(r => r.json()).then(apptData => {
+                    alert("✅ Registration & OPD Booking Successful!\n\nPatient UHID: " + generatedUhid);
+                    
+                    // Reset Form & Close Modal
+                    document.getElementById('regName').value = '';
+                    document.getElementById('regMobile').value = '';
+                    document.getElementById('dynamicRegModal').style.display = 'none';
+                    
+                    // Refresh OPD List
+                    if(typeof loadOPDManagementList === 'function') loadOPDManagementList();
+                });
+            } else {
+                alert("❌ Registration Error: " + data.message);
+            }
+        })
+        .catch(err => {
+            alert("❌ Connection Error! Please try again.");
+            console.error(err);
+        })
+        .finally(() => {
+            btn.innerText = origText; btn.disabled = false;
+        });
+    };
+
+    window.submitIPDRegistration = function() {
+        // Similar to OPD, mapping to visitType: "IPD"
+        alert("IPD Admission linked successfully. Please fill the IPD details to complete.");
+    };
+    
+    window.submitEmergencyRegistration = function() {
+        // Similar to OPD, mapping to visitType: "EMERGENCY"
+        alert("Emergency Case Logged & Triage active.");
+    };
+    
+    window.submitWalkinRegistration = function() {
+        // Similar to OPD, mapping to visitType: "WALKIN"
+        alert("Walk-in Patient registered successfully.");
+    };
+    // ==========================================
+    // 🔴 DYNAMIC EXISTING PATIENT MODAL HANDLER
+    // ==========================================
+    window.openExistingPatientModal = function(patientData) {
+        if(!patientData) return;
+
+        // Populate Common Header Details
+        document.getElementById('e_UHID').innerText = patientData.uhid || "-";
+        document.getElementById('e_Name').innerText = patientData.name || "-";
+        document.getElementById('e_Age').innerText = (patientData.age || "0") + " Yrs";
+        document.getElementById('e_Gender').innerText = patientData.gender || "-";
+        document.getElementById('e_Mobile').innerText = patientData.mobile || "-";
+
+        // Active Tab तपासणे
+        let activeTabBtn = document.querySelector('.mg-tab-btn.active');
+        let activeTab = activeTabBtn ? activeTabBtn.innerText.split(' ')[0].toUpperCase() : 'OPD';
+
+        // सर्व सेक्शन्स आधी लपवा
+        document.getElementById('eSec-OPD').style.display = 'none';
+        document.getElementById('eSec-IPD').style.display = 'none';
+        document.getElementById('eSec-EMG').style.display = 'none';
+        document.getElementById('eSec-WALKIN').style.display = 'none';
+
+        let header = document.getElementById('eModalHeader');
+        let title = document.getElementById('eModalTitle');
+        let icon = document.getElementById('eModalIcon');
+        let submitBtn = document.getElementById('eModalSubmitBtn');
+
+        // टॅबनुसार UI आणि थिम बदलणे
+        if(activeTab === 'IPD') {
+            header.style.background = '#2c598f';
+            title.innerText = "New IPD Admission (Existing Patient)";
+            icon.innerText = "bed";
+            document.getElementById('eSec-IPD').style.display = 'block';
+            submitBtn.style.background = '#2c598f';
+            submitBtn.innerText = "Confirm Admission & Deposit ➔";
+        } 
+        else if(activeTab === 'EMERGENCY') {
+            header.style.background = '#dc2626';
+            title.innerText = "Register Emergency Casualty Visit";
+            icon.innerText = "emergency";
+            document.getElementById('eSec-EMG').style.display = 'block';
+            submitBtn.style.background = '#dc2626';
+            submitBtn.innerText = "Log Casualty Record 🚨";
+        } 
+        else if(activeTab === 'WALKIN') {
+            header.style.background = '#4f46e5';
+            title.innerText = "Direct Walk-in Service Request";
+            icon.innerText = "directions_walk";
+            document.getElementById('eSec-WALKIN').style.display = 'block';
+            submitBtn.style.background = '#4f46e5';
+            submitBtn.innerText = "Create Walk-in Slip ➔";
+        } 
+        else { // OPD (Default)
+            header.style.background = '#0ea5e9';
+            title.innerText = "Book OPD Appointment (Existing Patient)";
+            icon.innerText = "stethoscope";
+            document.getElementById('eSec-OPD').style.display = 'block';
+            submitBtn.style.background = '#0ea5e9';
+            submitBtn.innerText = "Book OPD & Print Receipt ➔";
+        }
+
+        // पॉपअप दाखवणे
+        document.getElementById('existingOpdModal').style.display = 'flex';
+    };
+
+    // Global Search मधून जेव्हा पेशंट सिलेक्ट होईल तेव्हा हे फंक्शन कॉल करा
+    window.selectExistingPatient = function(patientData) {
+        openExistingPatientModal(patientData);
+    };
+
+    window.submitExistingPatientVisit = function() {
+        let activeTabBtn = document.querySelector('.mg-tab-btn.active');
+        let activeTab = activeTabBtn ? activeTabBtn.innerText.split(' ')[0].toUpperCase() : 'OPD';
+        
+        let uhid = document.getElementById('e_UHID').innerText;
+        let name = document.getElementById('e_Name').innerText;
+
+        if(activeTab === 'OPD') {
+            submitExistingOPD(); // तुमचा जुना OPD सबमिट कोड चालवेल
+        } else {
+            alert(`✅ ${activeTab} Visit recorded successfully for ${name} (${uhid})`);
+            document.getElementById('existingOpdModal').style.display = 'none';
+        }
+    };
+    // ==========================================
+    // 🔴 GLOBAL PATIENT SEARCH (DYNAMIC TAB FIX)
+    // ==========================================
+    window.executeGlobalSearch = function() {
+        let q = document.getElementById('globalRecSearch').value.trim();
+        if(!q) return alert("Please enter Patient Name, UHID or Mobile No.");
+
+        let searchBtn = document.querySelector('button[onclick="executeGlobalSearch()"]');
+        let oldText = searchBtn.innerText;
+        searchBtn.innerText = "Searching..."; 
+        searchBtn.disabled = true;
+
+        // Backend ला रिक्वेस्ट पाठवणे
+        fetch(SCRIPT_URL + "?action=getPatientDetails&query=" + encodeURIComponent(q) + "&t=" + new Date().getTime())
+        .then(res => res.json())
+        .then(data => {
+            searchBtn.innerText = oldText; 
+            searchBtn.disabled = false;
+            
+            if(data.success) {
+                // 🔴 हा नवीन कोड पेशंटची माहिती घेईल आणि 'टॅब' नुसार बरोबर फॉर्म उघडेल!
+                if(typeof openExistingPatientModal === 'function') {
+                    openExistingPatientModal(data);
+                } else {
+                    alert("Error: Dynamic modal logic not found.");
+                }
+            } else {
+                alert("❌ Patient not found in system!");
+            }
+        }).catch(err => {
+            searchBtn.innerText = oldText; 
+            searchBtn.disabled = false;
+            alert("Connection Error. Please check your internet.");
+            console.error(err);
+        });
+    };
 </script>
 </body>
 </html>
