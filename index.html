@@ -4480,11 +4480,12 @@
     
     function fetchPendingIndents(isManual = false) {
         if(isManual && document.getElementById('modalIndentList')) document.getElementById('modalIndentList').innerHTML = '<p style="text-align:center; color: #7f8c8d;">Loading data...</p>';
-        fetch(SCRIPT_URL + "?action=getPendingIndents&t=" + new Date().getTime(), { headers: { 'Content-Type': 'text/plain;charset=utf-8' } })
+        
+        // 🔴 FIX: इथे headers काढून टाकले आहेत
+        fetch(SCRIPT_URL + "?action=getPendingIndents&t=" + new Date().getTime())
         .then(res => res.json()).then(data => {
             let grouped = {};
             data.forEach(row => { 
-                // 🔴 FIX: submitUser ला grouped ऑब्जेक्टमध्ये ऍड केले आहे
                 if(!grouped[row.indentNo]) grouped[row.indentNo] = { 
                     indentNo: row.indentNo, date: row.date, ward: row.ward, 
                     patientName: row.patient, doctor: row.doctor, 
@@ -4505,7 +4506,7 @@
             if(document.getElementById('pendingSaleCount')) document.getElementById('pendingSaleCount').innerText = allIndents.length;
             if(document.getElementById('kpiPendingIndents')) document.getElementById('kpiPendingIndents').innerText = allIndents.length;
             
-            renderIndentList(allIndents); 
+            if(typeof renderIndentList === "function") renderIndentList(allIndents); 
             
         }).catch(e => console.error("Error fetching indents", e));
     }
@@ -6193,14 +6194,27 @@
         showToast("Fetching Admin Data...", "success");
         fetch(SCRIPT_URL + "?action=getAdminDashboardData&t=" + new Date().getTime()).then(res => res.json()).then(data => {
             let rawIndents = data.indents || []; let grouped = {};
-            rawIndents.forEach(row => { if(!grouped[row.indentNo]) { grouped[row.indentNo] = { indentNo: row.indentNo, dateStr: row.dateStr || row.date, ward: row.ward, patient: row.patient || row.patientName, doctor: row.doctor || row.doctorName, status: row.status, responseTime: row.responseTime, dispatchTime: row.dispatchTime, medicines: [] }; } let mName = row.medicine || row.medicine_name || row.itemName || row.name; let mQty = row.qty || row.quantity; if(mName) { grouped[row.indentNo].medicines.push({ name: mName, qty: mQty }); } });
-            globalAdminIndents = Object.values(grouped); populateAdminDropdowns(data.settings.wards); renderAdminWards(data.settings.wards); 
+            rawIndents.forEach(row => { 
+                if(!grouped[row.indentNo]) { grouped[row.indentNo] = { indentNo: row.indentNo, dateStr: row.dateStr || row.date, ward: row.ward, patient: row.patient || row.patientName, doctor: row.doctor || row.doctorName, status: row.status, responseTime: row.responseTime, dispatchTime: row.dispatchTime, medicines: [] }; } 
+                let mName = row.medicine || row.medicine_name || row.itemName || row.name; let mQty = row.qty || row.quantity; 
+                if(mName) { grouped[row.indentNo].medicines.push({ name: mName, qty: mQty }); } 
+            });
+            window.globalAdminIndents = Object.values(grouped); 
             
-            // 🔴 नवीन: युझर्सचा डेटा टेबलमध्ये भरणे
-            if(data.settings.users && typeof renderAdminUsers === "function") renderAdminUsers(data.settings.users); 
-           if(data.settings.users) { window.allUsersList = data.settings.users; renderAdminUsers(data.settings.users); }
+            if(typeof populateAdminDropdowns === "function") populateAdminDropdowns(data.settings.wards); 
+            if(typeof renderAdminWards === "function") renderAdminWards(data.settings.wards); 
+            
+            // 🔴 FIX: डुप्लिकेट लाईन काढली आणि सुरक्षित कॉल दिला
+            if(data.settings.users) { 
+                window.allUsersList = data.settings.users; 
+                if(typeof renderAdminUsers === "function") {
+                    renderAdminUsers(data.settings.users); 
+                }
+            }
 
-            updateAdminAnalytics(); executeAdminSearch(); showToast("Admin Data Loaded", "success");
+            if(typeof updateAdminAnalytics === "function") updateAdminAnalytics(); 
+            if(typeof executeAdminSearch === "function") executeAdminSearch(); 
+            showToast("Admin Data Loaded", "success");
         }).catch(err => { showToast("Error loading data", "error"); });
     }
 
